@@ -1,0 +1,17 @@
+# Cache
+__pycache__/
+
+#distribution temp
+build/
+dist/
+*.egg-info/
+
+# Spyder project
+.spyproject
+
+# dataset
+dataset/
+
+# jupyter notebook for testing
+jupyter_notebook/testing.ipynb
+jupyter_notebook/.ipynb_checkpoints
