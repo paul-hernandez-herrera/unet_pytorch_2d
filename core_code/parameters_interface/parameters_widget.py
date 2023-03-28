@@ -49,12 +49,15 @@ class parameters_create_training_set():
 class parameters_model_training():
     def __init__(self, model, training_dataset, n_channels_target):
         print('------------------------------')
-        print('\033[47m' '\033[1m' 'OPTIONAL PARAMETERS' '\033[0m')
+        print('\033[47m' '\033[1m' 'REQUIRED PARAMETERS' '\033[0m')
         print('------------------------------')
         
         self.model_saving = parameters_model_saving()
         
         print('------------------------------')
+        print('------------------------------')
+        print('\033[47m' '\033[1m' 'OPTIONAL PARAMETERS' '\033[0m')
+        print('------------------------------')        
     
         self.batch_w = ipwidget_basic.set_Int('Batch size: ', 8)
         self.number_epochs_w = ipwidget_basic.set_Int('Number of epochs: ', 100) 
@@ -81,6 +84,9 @@ class parameters_model_training():
         if str_id == 'optimizer': return self.optimizer.get()
         if str_id == 'train_dataset': return self.validation.get()["train_dataset"]
         if str_id == 'validation_dataset': return self.validation.get()["validation_dataset"]
+        if str_id == 'model_output_folder': return self.model_saving.get("model_output_folder")         
+        if str_id == 'model_checkpoint': return self.model_saving.get("model_checkpoint")
+        if str_id == 'model_checkpoint_frequency': return self.model_saving.get("model_checkpoint_frequency")
 
 ################################################################################
 
@@ -308,22 +314,27 @@ class parameters_data_augmentation():
     
 class parameters_model_saving():
     def __init__(self):
-        self.folder_input_w = ipwidget_basic.set_text('Folder model\'s output : ', 'Insert path here', show = False)
-        self.save_epochs = ipwidget_basic.set_checkbox('Save model epochs: ', False, show = False)
+        self.model_output_w = ipwidget_basic.set_text('Model output folder : ', 'Insert path here', show = False)
+        self.model_checkpoint_w = ipwidget_basic.set_checkbox('Model checkpoint interval. ', False, show = False)
         
-        self.n_epochs = ipwidget_basic.set_Int('Every step epochs ', 10, show  = False)
+        self.model_checkpoint_frequency = ipwidget_basic.set_Int('Frequency', 10, show  = False)
         
-        self.epoch_container = widgets.HBox(children= [self.save_epochs])
-        self.main_container = widgets.VBox(children= [self.folder_input_w, self.epoch_container])
+        self.epoch_container = widgets.HBox(children= [self.model_checkpoint_w])
+        self.main_container = widgets.VBox(children= [self.model_output_w, self.epoch_container])
         
-        self.save_epochs.observe(self.handler_model_saving, names='value') 
+        self.model_checkpoint_w.observe(self.handler_model_saving, names='value') 
         display(self.main_container)
         
     def handler_model_saving(self, change):
         if change.new:
-            self.epoch_container.children = [self.save_epochs, self.n_epochs]
+            self.epoch_container.children = [self.model_checkpoint_w, self.model_checkpoint_frequency]
         else:
-            self.epoch_container.children = [self.save_epochs]
+            self.epoch_container.children = [self.model_checkpoint_w]
+            
+    def get(self, str_id):
+        if str_id == 'model_output_folder': return self.model_output_w.value         
+        if str_id == 'model_checkpoint': return self.model_checkpoint_w.value
+        if str_id == 'model_checkpoint_frequency': return self.model_checkpoint_frequency.value
             
         
     

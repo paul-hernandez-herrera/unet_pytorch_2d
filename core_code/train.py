@@ -1,5 +1,7 @@
 import argparse 
-import torch 
+import torch
+from pathlib import Path
+import copy
 
 class train_model():
     def __init__(self, model,
@@ -8,7 +10,10 @@ class train_model():
                  list_loss_function,
                  device,
                  optimizer,
-                 epochs):
+                 epochs,
+                 model_output_folder = '',
+                 model_checkpoint = False,
+                 model_checkpoint_frequency = 10):
         self.model = model
         self.train_dataloader = train_dataloader
         self.validation_dataloader = validation_dataloader
@@ -16,11 +21,15 @@ class train_model():
         self.device = device
         self.optimizer = optimizer
         self.epochs = epochs
+        self.model_output_folder = model_output_folder
+        self.model_checkpoint = model_checkpoint
+        self.model_checkpoint_frequency = model_checkpoint_frequency
 
         
-    def run(self):        
+    def run(self):
+        minimum_loss = float('inf')
         print('Running training')
-        for epoch in range(0, self.epochs):
+        for epoch in range(1, self.epochs+1):
             print('Running iteration ' + str(epoch) + '/' +str(self.epochs))
             self.model.train() #set the model in training mode
             epoch_loss = 0
@@ -46,8 +55,16 @@ class train_model():
                 self.optimizer.step() #update the weights using the gradients and the approach by optimizer
                 
                 epoch_loss += loss.item()
-            epoch_loss = epoch_loss/len(self.train_dataloader.dataset)
-            print(epoch_loss)
+            print(f"epoch loss: {epoch_loss}")
+            if epoch_loss < minimum_loss:
+                minimum_loss, epoch_best = epoch_loss, epoch
+                model_best_state_dict = copy.deepcopy(self.model.state_dict())
+                
+            if self.model_checkpoint & ((epoch%self.model_checkpoint_frequency) ==0):
+                torch.save(self.model.state_dict(), Path(self.model_output_folder, f"model_{epoch}.pth"))
+                
+        torch.save(self.model.state_dict(), Path(self.model_output_folder, "model_last.pth"))
+        torch.save(model_best_state_dict, Path(self.model_output_folder, f"model_best_e{epoch_best}.pth"))
         return self.model
                 
                 
