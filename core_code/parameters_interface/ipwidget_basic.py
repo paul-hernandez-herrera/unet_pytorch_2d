@@ -84,6 +84,7 @@ def set_dropdown(string_name, default_options):
         #value= default_options[0],
         description = string_name,
         disabled = False,
+        style = {'description_width': 'initial'}
         #indent=False,
     )
     display(widget_dropdown)

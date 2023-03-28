@@ -55,7 +55,6 @@ class parameters_model_training():
         self.model_saving = parameters_model_saving()
         
         print('------------------------------')
-        print('------------------------------')
         print('\033[47m' '\033[1m' 'OPTIONAL PARAMETERS' '\033[0m')
         print('------------------------------')        
     
@@ -74,6 +73,9 @@ class parameters_model_training():
         print('------------------------------')
         self.optimizer = parameters_optimizer(model)
         print('------------------------------')
+        
+        ## lr scheduler
+        self.lr_scheduler = parameters_lr_scheduler()
         
 
     
@@ -150,7 +152,6 @@ class parameters_optimizer():
     def get(self):
         if self.optimizer_w.value == 'SGD':
             optimizer = torch.optim.SGD(self.model.parameters(), lr= self.learning_rate_w.value, momentum = self.momentum_w.value)
-            print("Optimizer: SGD --- lr: " + str(self.learning_rate_w.value) + " --- momentum: " + str(self.momentum_w.value))
         elif self.optimizer_w.value == 'Adam':
             optimizer = torch.optim.Adam(self.model.parameters(), lr= self.learning_rate_w.value, betas=(self.beta1_w.value, self.beta2_w.value))
         elif self.optimizer_w.value == 'Nesterov_Adam':
@@ -335,6 +336,63 @@ class parameters_model_saving():
         if str_id == 'model_output_folder': return self.model_output_w.value         
         if str_id == 'model_checkpoint': return self.model_checkpoint_w.value
         if str_id == 'model_checkpoint_frequency': return self.model_checkpoint_frequency.value
+        
+################################################################################        
+
+class parameters_lr_scheduler():
+    def __init__(self):
+        
+        lr_scheduler_options = [('reduce LR on plateau', 'reduce_on_plateau'),
+                                ('Cyclic LR', 'cyclic'),
+                                ('Cosine Annealing LR', 'cosine_annealing'),
+                                ('Step LR', 'step')
+                                ]
+        
+        self.lr_scheduler_w = ipwidget_basic.set_dropdown('lr schedulers: ', lr_scheduler_options)
+        self.lr_scheduler_w.observe(self.dropdown_handler_lr_scheduler, names='value')
+        
+
+        # parameters plateau
+        self.factor_w = ipwidget_basic.set_Float_Bounded('Factor: ', 0.1, 0, 1, 0.01)
+        self.patience_w = ipwidget_basic.set_Int('Factor: ', 10, show = False)
+        
+        # parameters Cyclic LR
+        self.cyclic_min_lr_w = ipwidget_basic.set_Float_Bounded('Min lr: ', 0.0001, 0, 1, 0.0001)
+        self.cyclic_max_lr_w = ipwidget_basic.set_Float_Bounded('Max lr: ', 0.01, 0, 1, 0.01)
+        
+        # parameters cosine annealing
+        self.cyclic_epochs_w = ipwidget_basic.set_Int('N epochs to restart LR: ', 50, show = False)
+        
+        # parameters step
+        self.step_w = ipwidget_basic.set_Int('Step: ', 10, show = False)
+        
+        
+        self.main_container = widgets.HBox(children= [self.factor_w, self.patience_w])
+        
+        display(self.main_container)
+        
+    def dropdown_handler_lr_scheduler(self, change):
+        if change.new == 'reduce_on_plateau':
+            self.main_container.children = [self.factor_w, self.patience_w]
+        elif change.new == 'cyclic':
+            self.main_container.children = [self.cyclic_min_lr_w, self.cyclic_max_lr_w, self.cyclic_epochs_w]
+        elif change.new == 'cosine_annealing':            
+            self.main_container.children = [self.cyclic_epochs_w]
+        elif change.new == 'step':
+            self.main_container.children = [self.step_w, self.factor_w]
+    
+    def get(self, optimizer):
+        if self.optimizer_w.value == 'reduce_on_plateau':
+            lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min', factor=self.factor_w.value, patience=self.patience_w.value)
+        elif self.optimizer_w.value == 'cyclic':
+            lr_scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, mode = 'min', base_lr = self.cyclic_min_lr_w.value, max_lr = self.cyclic_max_lr_w.value, step_size_up = self.cyclic_epochs_w.value)
+        elif self.optimizer_w.value == 'cosine_annealing':
+            lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = self.cyclic_epochs_w.value)
+        elif self.optimizer_w.value == 'step':
+            lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = self.step_w.value, gamma= self.factor_w.value)
+        return lr_scheduler
+
+################################################################################        
             
         
     
