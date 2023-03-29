@@ -242,7 +242,7 @@ class parameters_validation_set():
             new_train_dataset, validation_dataset = torch.utils.data.random_split(self.train_dataset, [1-per_val, per_val], generator = generator_seed)
         elif self.validation_w.value == 'None':
             new_train_dataset = self.train_dataset
-            validation_dataset = None            
+            validation_dataset = CustomImageDataset('', '')
         
         return new_train_dataset, validation_dataset
             
@@ -348,7 +348,7 @@ class parameters_lr_scheduler():
                                 ('Step LR', 'step')
                                 ]
         
-        self.lr_scheduler_w = ipwidget_basic.set_dropdown('lr schedulers: ', lr_scheduler_options)
+        self.lr_scheduler_w = ipwidget_basic.set_dropdown('learning rate (LR) schedulers: ', lr_scheduler_options)
         self.lr_scheduler_w.observe(self.dropdown_handler_lr_scheduler, names='value')
         
 
