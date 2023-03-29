@@ -1,10 +1,10 @@
 import ipywidgets as widgets
 import torch
 from IPython.display import display
-from ..loss import dice_loss
 from ..UNet_2D.data_augmentation import augmentation_segmentation_task
 from ..UNet_2D.Dataset import CustomImageDataset
 from . import ipwidget_basic
+from . import options
 
     
 ################################################################################
@@ -18,9 +18,8 @@ class parameters_training_images():
         self.folder_target_w = ipwidget_basic.set_text('Folder path target mask:', 'Insert path here')
     
     def get(self):
-        p = {"folder_input"     : self.folder_input_w.value,
-             "folder_target"    : self.folder_target_w.value}
-        return p
+        return {"folder_input"     : self.folder_input_w.value,
+                "folder_target"    : self.folder_target_w.value}
 
 ################################################################################
 
@@ -50,54 +49,52 @@ class parameters_model_training():
     def __init__(self, model, training_dataset, n_channels_target):
         print('------------------------------')
         print('\033[47m' '\033[1m' 'REQUIRED PARAMETERS' '\033[0m')
-        print('------------------------------')
+        print('------------------------------')        
         
-        self.model_saving = parameters_model_saving()
+        self.model_saving = parameters_model_saving()        
         
         print('------------------------------')
         print('\033[47m' '\033[1m' 'OPTIONAL PARAMETERS' '\033[0m')
-        print('------------------------------')        
-    
+        print('------------------------------')    
+        
         self.batch_w = ipwidget_basic.set_Int('Batch size: ', 8)
-        self.number_epochs_w = ipwidget_basic.set_Int('Number of epochs: ', 100) 
+        self.number_epochs_w = ipwidget_basic.set_Int('Number of epochs: ', 100)
         
         print('------------------------------')
-        ## setting validation set
         self.validation = parameters_validation_set(training_dataset)
         print('------------------------------')
         
-        
         self.criterion_loss = parameters_loss_function(n_channels_target)
     
-        ## setting optimizer
         print('------------------------------')
         self.optimizer = parameters_optimizer(model)
         print('------------------------------')
         
-        ## lr scheduler
-        self.lr_scheduler = parameters_lr_scheduler()
-        
-
+        self.lr_scheduler = parameters_lr_scheduler()     
     
     def get(self, str_id):
-        if str_id == 'batch': return self.batch_w.value
-        if str_id == 'epochs': return self.number_epochs_w.value
-        if str_id == 'loss_function': return self.criterion_loss.get()["loss_function"]
-        if str_id == 'optimizer': return self.optimizer.get()
-        if str_id == 'train_dataset': return self.validation.get()["train_dataset"]
-        if str_id == 'validation_dataset': return self.validation.get()["validation_dataset"]
-        if str_id == 'model_output_folder': return self.model_saving.get("model_output_folder")         
-        if str_id == 'model_checkpoint': return self.model_saving.get("model_checkpoint")
-        if str_id == 'model_checkpoint_frequency': return self.model_saving.get("model_checkpoint_frequency")
+        parameters = {
+            'batch': self.batch_w.value,
+            'epochs': self.number_epochs_w.value,
+            'loss_function': self.criterion_loss.get(),
+            'optimizer': self.optimizer.get(),
+            'train_dataset': self.validation.get()['train_dataset'],
+            'validation_dataset': self.validation.get()['validation_dataset'],
+            'model_output_folder': self.model_saving.get('model_output_folder'),
+            'model_checkpoint': self.model_saving.get('model_checkpoint'),
+            'model_checkpoint_frequency': self.model_saving.get('model_checkpoint_frequency')
+        }
+        return parameters[str_id]
 
 ################################################################################
 
 class parameters_device():
     def __init__(self):
         ##SETTING DEVICE
-        device_options = [('CPU', 'cpu')]    
+        device_options = [('CPU', 'cpu')]
+        
         #checking if torch is available
-        if torch.cuda.is_available():
+        if torch.cuda.is_available():            
             for i in range(torch.cuda.device_count(),0,-1):
                 device_options.insert(0, (torch.cuda.get_device_name(i-1), 'cuda:'+str(i-1)))
         
@@ -140,24 +137,24 @@ class parameters_optimizer():
         display(self.main_container)
         
     def dropdown_handler_optimizer(self, change):
-        if change.new == 'SGD':
-            self.main_container.children = [self.learning_rate_w, self.momentum_w]
-        elif change.new == 'Adam':
-            self.main_container.children = [self.learning_rate_w, self.beta1_w, self.beta2_w]
-        elif change.new == 'Nesterov_Adam':            
-            self.main_container.children = [self.learning_rate_w, self.beta1_w, self.beta2_w]
-        elif change.new == 'RMSprop':
-            self.main_container.children = [self.learning_rate_w, self.weigth_decay_w, self.momentum_w]     
+        # Define a dictionary to map optimizer names to their parameters
+        optimizer_params = {
+            'SGD': [self.learning_rate_w, self.momentum_w],
+            'Adam': [self.learning_rate_w, self.beta1_w, self.beta2_w],
+            'Nesterov_Adam': [self.learning_rate_w, self.beta1_w, self.beta2_w],
+            'RMSprop': [self.learning_rate_w, self.weigth_decay_w, self.momentum_w]
+        }
+        
+        self.main_container.children = optimizer_params.get(change.new, [])
     
     def get(self):
-        if self.optimizer_w.value == 'SGD':
-            optimizer = torch.optim.SGD(self.model.parameters(), lr= self.learning_rate_w.value, momentum = self.momentum_w.value)
-        elif self.optimizer_w.value == 'Adam':
-            optimizer = torch.optim.Adam(self.model.parameters(), lr= self.learning_rate_w.value, betas=(self.beta1_w.value, self.beta2_w.value))
-        elif self.optimizer_w.value == 'Nesterov_Adam':
-            optimizer = torch.optim.NAdam(self.model.parameters(), lr= self.learning_rate_w.value, betas=(self.beta1_w.value, self.beta2_w.value))
-        elif self.optimizer_w.value == 'RMSprop':
-            optimizer = torch.optim.RMSprop(self.model.parameters(), lr= self.learning_rate_w.value, weight_decay= self.weigth_decay_w.value, momentum = self.momentum_w.value)
+        optimizer = options.get_optimizer(self.optimizer_w.value, 
+                                          self.model, 
+                                          lr = self.learning_rate_w.value,
+                                          weight_decay = self.weigth_decay_w.value, 
+                                          momentum = self.momentum_w.value,
+                                          betas = (self.beta1_w.value, self.beta2_w.value)
+                                          )
         return optimizer
 
 ################################################################################
@@ -166,36 +163,28 @@ class parameters_loss_function():
     def __init__(self, n_channels_target):
         
         # options for loss functions depending on the problem to solve
-        self.multiclass_options = [('Cross entropy loss', 'cross_entropy'),
-                                   ('Dice loss', 'dice_loss'),
-                                   ('Dice + Cross Entropy', 'dice_cross')]
+        loss_functions = {
+            'singleClass': [
+                ('Binary cross entropy (BCE)', 'BCEWithLogitsLoss'),
+                ('Dice loss', 'dice_loss'),
+                ('Dice + BCE', 'dice_BCE')
+            ],
+            'multiClass': [
+                ('Cross entropy loss', 'cross_entropy'),
+                ('Dice loss', 'dice_loss'),
+                ('Dice + Cross Entropy', 'dice_cross')
+            ]
+        }        
         
-        self.singleClass_options = [('Binary cross entropy (BCE)', 'BCEWithLogitsLoss'),
-                                    ('Dice loss', 'dice_loss'),
-                                    ('Dice + BCE', 'dice_BCE')]        
-        
-        if n_channels_target ==1:
-            loss_function_options = self.singleClass_options
-        else:
-            loss_function_options = self.multiclass_options
+        loss_type = 'singleClass' if n_channels_target == 1 else 'multiClass'
     
-        self.loss_w = ipwidget_basic.set_dropdown('Loss function: ', loss_function_options)
+        self.loss_w = ipwidget_basic.set_dropdown('Loss function: ', loss_functions[loss_type])
         
         
     def get(self):
-        if self.loss_w.value == 'cross_entropy': 
-            loss_function = [torch.nn.CrossEntropyLoss()]
-        elif self.loss_w.value == 'dice_loss': 
-            loss_function = [dice_loss.DiceLoss2D()]
-        elif self.loss_w.value == 'dice_cross': 
-            loss_function = [dice_loss.DiceLoss2D(), torch.nn.CrossEntropyLoss()]
-        elif self.loss_w.value == 'BCEWithLogitsLoss': 
-            loss_function = [torch.nn.BCEWithLogitsLoss()]
-        elif self.loss_w.value == 'dice_BCE': 
-            loss_function = [dice_loss.DiceLoss2D(), torch.nn.BCEWithLogitsLoss()]
-            
-        p = {"loss_function"    : loss_function}
-        return p
+        loss_function = options.get_loss_function(self.loss_w.value)
+        
+        return loss_function
 
 ################################################################################
 
@@ -213,8 +202,7 @@ class parameters_validation_set():
         self.validation_w = ipwidget_basic.set_dropdown('Validation: ', validation_options)
         
         self.folder_input_w  = ipwidget_basic.set_text('Folder images: ', 'Insert path here', show = False)
-        self.folder_target_w = ipwidget_basic.set_text('Folder target: ', 'Insert path here', show = False)
-        
+        self.folder_target_w = ipwidget_basic.set_text('Folder target: ', 'Insert path here', show = False)        
         self.perc_training_set = ipwidget_basic.set_Float_Bounded(' ', 0.05, 0, 1, 0.01)
         
         self.main_container = widgets.VBox(children= [])
@@ -232,27 +220,19 @@ class parameters_validation_set():
             self.main_container.children = []
             
     def split_training_validation(self):
-        if self.validation_w.value == 'folder_path':
-            new_train_dataset = self.train_dataset
-            validation_dataset = CustomImageDataset(self.folder_input_w.value, self.folder_target_w)
-        elif self.validation_w.value == 'percentage_training_set':
+        val_type = self.validation_w.value
+        if val_type == 'None':
+            return self.train_dataset, CustomImageDataset('', '')
+        elif val_type == 'folder_path':
+            return self.train_dataset, CustomImageDataset(self.folder_input_w.value, self.folder_target_w)
+        elif val_type == 'percentage_training_set':
             per_val = self.perc_training_set.value
-            #to generate the same validation_set
             generator_seed = torch.Generator().manual_seed(1)
-            new_train_dataset, validation_dataset = torch.utils.data.random_split(self.train_dataset, [1-per_val, per_val], generator = generator_seed)
-        elif self.validation_w.value == 'None':
-            new_train_dataset = self.train_dataset
-            validation_dataset = CustomImageDataset('', '')
-        
-        return new_train_dataset, validation_dataset
+            return torch.utils.data.random_split(self.train_dataset, [1-per_val, per_val], generator=generator_seed)
             
     def get(self):
-        
         new_train_dataset, validation_dataset = self.split_training_validation()
-            
-        p = {"train_dataset"    : new_train_dataset,
-             "validation_dataset"  : validation_dataset}
-        return p                
+        return {"train_dataset"    : new_train_dataset, "validation_dataset"  : validation_dataset}
             
 
 
@@ -265,53 +245,44 @@ class parameters_data_augmentation():
         dummy = augmentation_segmentation_task()
         
         # options for loss functions
-        self.data_augmentation_w = ipwidget_basic.set_checkbox('Data augmentation', False, show = False)
+        self.data_augmentation_flag_w = ipwidget_basic.set_checkbox('Data augmentation', False, show = False)
         
         self.hflip_flag_w = ipwidget_basic.set_checkbox('Horizontal flip', True, show = False)
         self.vflip_flag_w = ipwidget_basic.set_checkbox('Vertical flip', True, show = False)
         self.shear_flag_w = ipwidget_basic.set_checkbox('Shear', True, show = False)
         self.shear_angle_w = ipwidget_basic.set_intSlider('Angle', dummy.shear_angle[0], dummy.shear_angle[1], -180, 180, show = False)
         self.zoom_flag_w = ipwidget_basic.set_checkbox('Zoom', True, show = False)
-        self.zoom_w = ipwidget_basic.set_FloatRangeSlider('Zoom', dummy.zoom_range[0], dummy.zoom_range[1], 0.1, 2, show = False)
+        self.zoom_range_w = ipwidget_basic.set_FloatRangeSlider('Zoom', dummy.zoom_range[0], dummy.zoom_range[1], 0.1, 2, show = False)
         
         
-        self.main_container = widgets.VBox(children= [self.data_augmentation_w])
+        self.main_container = widgets.VBox(children= [self.data_augmentation_flag_w])
         
         
         self.shear_container = widgets.HBox(children= [self.shear_flag_w, self.shear_angle_w])
-        self.zoom_container = widgets.HBox(children= [self.zoom_flag_w, self.zoom_w])
+        self.zoom_container = widgets.HBox(children= [self.zoom_flag_w, self.zoom_range_w])
         self.options_container = widgets.VBox(children= [self.hflip_flag_w, self.vflip_flag_w, self.shear_container, self.zoom_container])
         
-        self.data_augmentation_w.observe(self.dropdown_handler_augmentation, names='value')
+        self.data_augmentation_flag_w.observe(self.dropdown_handler_augmentation, names='value')
         display(self.main_container)
         
     def dropdown_handler_augmentation(self, change):
-        if self.data_augmentation_w.value == True:
-            self.main_container.children = [self.data_augmentation_w, self.options_container]
+        if self.data_augmentation_flag_w.value == True:
+            self.main_container.children = [self.data_augmentation_flag_w, self.options_container]
         else:
-            self.main_container.children = [self.data_augmentation_w]
+            self.main_container.children = [self.data_augmentation_flag_w]
             
-    def get(self):
-        self.data_augmentation_w.value
-        
-        if self.data_augmentation_w.value == True:
-            self.data_augmentation_object = augmentation_segmentation_task()
+    def get(self):        
+        data_augmentation = options.get_data_augmentation(
+            hflip_flag = self.hflip_flag_w.value, 
+            vflip_flag = self.vflip_flag_w.value, 
+            shear_flag = self.shear_flag_w.value, 
+            zoom_flag = self.zoom_flag_w.value, 
+            shear_angle = self.shear_angle_w.value, 
+            zoom_range = self.zoom_range_w.value, 
+            data_augmentation_flag = self.data_augmentation_flag_w.value)
             
-            # Setting the data augmentation flags
-            self.data_augmentation_object.hflip_flag = self.hflip_flag_w.value
-            self.data_augmentation_object.vflip_flag = self.vflip_flag_w.value
-            self.data_augmentation_object.shear_flag = self.shear_flag_w.value
-            self.data_augmentation_object.zoom_flag = self.zoom_flag_w.value
-            
-            self.data_augmentation_object.shear_angle = self.shear_angle_w.value
-            self.data_augmentation_object.zoom_range = self.zoom_w.value
-        else:
-            self.data_augmentation_object = None
-            
-        p = {"data_augmentation_flag"     : self.data_augmentation_w.value,
-             "data_augmentation_object"   : self.data_augmentation_object}
-            
-        return p
+        return {"data_augmentation_flag"   : self.data_augmentation_flag_w.value,
+                "data_augmentation_object" : data_augmentation}
     
 class parameters_model_saving():
     def __init__(self):
@@ -354,42 +325,49 @@ class parameters_lr_scheduler():
 
         # parameters plateau
         self.factor_w = ipwidget_basic.set_Float_Bounded('Factor: ', 0.1, 0, 1, 0.01)
-        self.patience_w = ipwidget_basic.set_Int('Factor: ', 10, show = False)
+        self.patience_w = ipwidget_basic.set_Int('Patience: ', 10, show = False)
         
         # parameters Cyclic LR
-        self.cyclic_min_lr_w = ipwidget_basic.set_Float_Bounded('Min lr: ', 0.0001, 0, 1, 0.0001)
-        self.cyclic_max_lr_w = ipwidget_basic.set_Float_Bounded('Max lr: ', 0.01, 0, 1, 0.01)
+        self.base_lr_w = ipwidget_basic.set_Float_Bounded('Base lr: ', 0.0001, 0, 1, 0.0001)
+        self.max_lr_w = ipwidget_basic.set_Float_Bounded('Max lr: ', 0.01, 0, 1, 0.01)
         
         # parameters cosine annealing
-        self.cyclic_epochs_w = ipwidget_basic.set_Int('N epochs to restart LR: ', 50, show = False)
+        self.T_max_w = ipwidget_basic.set_Int('N epochs to restart LR: ', 50, show = False)
         
         # parameters step
-        self.step_w = ipwidget_basic.set_Int('Step: ', 10, show = False)
+        self.step_size_w = ipwidget_basic.set_Int('Step: ', 10, show = False)
         
         
         self.main_container = widgets.HBox(children= [self.factor_w, self.patience_w])
         
         display(self.main_container)
         
-    def dropdown_handler_lr_scheduler(self, change):
-        if change.new == 'reduce_on_plateau':
-            self.main_container.children = [self.factor_w, self.patience_w]
-        elif change.new == 'cyclic':
-            self.main_container.children = [self.cyclic_min_lr_w, self.cyclic_max_lr_w, self.cyclic_epochs_w]
-        elif change.new == 'cosine_annealing':            
-            self.main_container.children = [self.cyclic_epochs_w]
-        elif change.new == 'step':
-            self.main_container.children = [self.step_w, self.factor_w]
+    def dropdown_handler_lr_scheduler(self, change):        
+        widget_mapping = {
+            'reduce_on_plateau': [self.factor_w, self.patience_w],
+            'cyclic': [self.base_lr_w, self.max_lr_w, self.T_max_w],
+            'cosine_annealing': [self.T_max_w],
+            'step': [self.step_size_w, self.factor_w]
+        }
+        
+        self.main_container.children = widget_mapping.get(change.new, [])
+
     
     def get(self, optimizer):
-        if self.optimizer_w.value == 'reduce_on_plateau':
-            lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode = 'min', factor=self.factor_w.value, patience=self.patience_w.value)
-        elif self.optimizer_w.value == 'cyclic':
-            lr_scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, mode = 'min', base_lr = self.cyclic_min_lr_w.value, max_lr = self.cyclic_max_lr_w.value, step_size_up = self.cyclic_epochs_w.value)
-        elif self.optimizer_w.value == 'cosine_annealing':
-            lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max = self.cyclic_epochs_w.value)
-        elif self.optimizer_w.value == 'step':
-            lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size = self.step_w.value, gamma= self.factor_w.value)
+        
+        lr_scheduler = options.get_lr_scheduler(
+            option_name = self.optimizer_w.value, 
+            optimizer = optimizer, 
+            factor = self.factor_w.value, 
+            patience = self.patience_w.value, 
+            base_lr = self.base_lr_w.value, 
+            max_lr = self.max_lr_w.value, 
+            step_size_up = self.T_max_w.value, 
+            T_max = self.T_max_w.value, 
+            step_size = self.step_size_w.value, 
+            gamma = self.factor_w.value, 
+            mode = 'min')     
+        
         return lr_scheduler
 
 ################################################################################        

@@ -8,8 +8,8 @@ from deep_learning_util import train_one_epoch, compute_validation_loss
 def train_model(model, 
                 train_dataloader, 
                 list_loss_functions,
-                device,
                 optimizer,
+                device = None,
                 epochs = 100, 
                 validation_dataloader = [], 
                 model_output_folder = '', 
@@ -17,6 +17,9 @@ def train_model(model,
                 model_checkpoint_frequency = 10,
                 lr_scheduler = None):
     
+    if device == None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        
     current_minimum_loss = float('inf')
     
     for epoch in range(1, epochs+1):
