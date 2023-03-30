@@ -20,6 +20,18 @@ class parameters_training_images():
     def get(self):
         return {"folder_input"     : self.folder_input_w.value,
                 "folder_target"    : self.folder_target_w.value}
+    
+################################################################################
+
+class parameters_folder_path():
+    def __init__(self):
+        print('------------------------------')
+        self.folder_path = ipwidget_basic.set_text('Folder/file path:', 'Insert path here')
+        self.folder_output = ipwidget_basic.set_text('Folder output:', 'Insert path here')
+        print('------------------------------')
+    
+    def get(self):
+        return self.folder_input_w.value, self.folder_output_w.value
 
 ################################################################################
 

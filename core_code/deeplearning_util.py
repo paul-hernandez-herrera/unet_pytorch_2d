@@ -1,4 +1,6 @@
 import torch
+import util
+from libpath import Path
 
 def train_one_epoch(model, train_dataloader, optimizer, list_loss_functions, device):
     #This is the main code responsible for updating the weights of the model for a single epoch
@@ -31,7 +33,6 @@ def train_one_epoch(model, train_dataloader, optimizer, list_loss_functions, dev
     return epoch_loss
 
 def compute_validation_loss(model, validation_dataloader, list_loss_functions, device):
-    
     model.train(True) #set the model in training mode
     val_loss = 0
     with torch.no_grad():  # Disable gradient calculations during evaluation
@@ -50,4 +51,23 @@ def compute_validation_loss(model, validation_dataloader, list_loss_functions, d
             
             val_loss += loss.item()
         
-    return val_loss    
+    return val_loss
+
+def predict_model(model, input_path, folder_output, device = 'cpu'):
+    file_paths = util.get_image_file_paths(input_path)
+    
+    model.train(True) #set the model in training mode
+    with torch.no_grad():  # Disable gradient calculations during evaluation
+        for img_file_name in file_paths: 
+            img = torch.tensor(util.imread(img_file_name)).float()
+            
+            img = img[None]
+            
+            img = img.to(device=device, dtype=torch.float32)
+            
+            network_output = model(img) #applying the model to the input images
+            
+            probability = torch.sigmoid(network_output).squeeze().numpy()
+            
+            util.imwrite(Path(folder_output, Path(img_file_name).stem + '_prob,tif'), 255*probability)
+    return 
