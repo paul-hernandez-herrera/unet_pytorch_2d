@@ -3,6 +3,7 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau, CyclicLR, CosineAnnealin
 from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
 from ..loss.dice_loss import DiceLoss2D
 from ..UNet_2D.data_augmentation import augmentation_segmentation_task
+from typing import Dict
 
 def get_optimizer(option_name: str, 
                   model,
@@ -25,28 +26,26 @@ def get_optimizer(option_name: str,
 
 ###################################################################
 
-def get_lr_scheduler(option_name: str,
-                     optimizer, 
-                     factor = 0.1,
-                     patience = 10,
-                     base_lr = 0.0001,
-                     max_lr = 0.01,
-                     step_size_up = 50,
-                     T_max = 50,
-                     step_size = 10,
-                     gamma = 0.1,
-                     mode = 'min'):
+def get_lr_scheduler(option_name: str, optimizer, **kwargs) -> object:
+    default_params: Dict[str, object] = {
+        'reduce_on_plateau': {'mode': 'min', 'factor': 0.1, 'patience': 10},
+        'cyclic': {'mode': 'min', 'base_lr': 0.0001, 'max_lr': 0.01, 'step_size_up': 50},
+        'cosine_annealing': {'T_max': 50},
+        'step': {'step_size': 10, 'gamma': 0.1}
+    }
+    params = default_params[option_name]
+    params.update(kwargs)
+    print(params)
     if option_name == 'reduce_on_plateau':
-        lr_scheduler = ReduceLROnPlateau(optimizer, mode = mode, factor = factor, patience = patience)
+        return ReduceLROnPlateau(optimizer, **params)
     elif option_name == 'cyclic':
-        lr_scheduler = CyclicLR(optimizer, mode = mode, base_lr = base_lr, max_lr = max_lr, step_size_up = step_size_up)
+        return CyclicLR(optimizer, **params)
     elif option_name == 'cosine_annealing':
-        lr_scheduler = CosineAnnealingLR(optimizer, T_max = T_max)
+        return CosineAnnealingLR(optimizer, **params)
     elif option_name == 'step':
-        lr_scheduler = StepLR(optimizer, step_size = step_size, gamma = gamma)
+        return StepLR(optimizer, **params)
     else:
-        raise Exception("Sorry, " + option_name + " not recognized as lr scheduler option.")
-    return lr_scheduler
+        raise ValueError(f"Invalid option name: {option_name}")
 
 ###################################################################
 
