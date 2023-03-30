@@ -273,10 +273,10 @@ class parameters_data_augmentation():
             
     def get(self):        
         data_augmentation = options.get_data_augmentation(
-            hflip_flag = self.hflip_flag_w.value, 
-            vflip_flag = self.vflip_flag_w.value, 
-            shear_flag = self.shear_flag_w.value, 
-            zoom_flag = self.zoom_flag_w.value, 
+            enable_hflip = self.hflip_flag_w.value, 
+            enable_vflip = self.vflip_flag_w.value, 
+            enable_shear = self.shear_flag_w.value, 
+            enable_zoom = self.zoom_flag_w.value, 
             shear_angle = self.shear_angle_w.value, 
             zoom_range = self.zoom_range_w.value, 
             data_augmentation_flag = self.data_augmentation_flag_w.value)
@@ -356,7 +356,7 @@ class parameters_lr_scheduler():
     def get(self, optimizer):
         
         lr_scheduler = options.get_lr_scheduler(
-            option_name = self.optimizer_w.value, 
+            option_name = self.lr_scheduler_w.value, 
             optimizer = optimizer, 
             factor = self.factor_w.value, 
             patience = self.patience_w.value, 

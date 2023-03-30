@@ -2,8 +2,8 @@ import argparse
 import torch
 from pathlib import Path
 import copy
-from deep_learning_util import train_one_epoch, compute_validation_loss
-
+from .deeplearning_util import train_one_epoch, compute_validation_loss
+import platform
 
 def train_model(model, 
                 train_dataloader, 
@@ -16,6 +16,9 @@ def train_model(model,
                 model_checkpoint = False, 
                 model_checkpoint_frequency = 10,
                 lr_scheduler = None):
+    
+    if (torch.__version__>= '2.0.0') & (platform.system() != 'Windows'):
+        model = torch.compile(model, mode= 'reduce-overhead')
     
     if device == None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -39,11 +42,12 @@ def train_model(model,
             
         if model_checkpoint & ((epoch%model_checkpoint_frequency) ==0):
             torch.save(model.state_dict(), Path(model_output_folder, f"model_{epoch}.pth"))
+        
+        print(optimizer.param_groups[0]['lr'])
             
     torch.save(model.state_dict(), Path(model_output_folder, f"last_model_e{epochs}.pth"))
     torch.save(best_model_state_dict, Path(model_output_folder, f"best_model_e{best_epoch}.pth"))
-    return model
-                
+    return model             
         
     
     

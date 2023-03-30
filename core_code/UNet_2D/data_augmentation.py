@@ -2,15 +2,20 @@ from torchvision.transforms.functional import affine, hflip, vflip
 import numpy as np
 
 class augmentation_segmentation_task():
-    def __init__(self):
-        self.zoom_range = [0.8, 1.2]
-        self.shear_angle = [-5, 5]
+    def __init__(self, zoom_range = [0.8, 1.2],
+                 shear_angle = [-5, 5], 
+                 enable_shear = True, 
+                 enable_hflip = True, 
+                 enable_vflip = True, 
+                 enable_zoom = True):
+        self.zoom_range = zoom_range
+        self.shear_angle = shear_angle
         
         #flag to compute specific transformations
-        self.enable_shear = True
-        self.enable_hflip = True
-        self.enable_vflip = True
-        self.enable_zoom = True
+        self.enable_shear = enable_shear
+        self.enable_hflip = enable_hflip
+        self.enable_vflip = enable_vflip
+        self.enable_zoom = enable_zoom
         
     def horizontal_flip(self, image, target):        
         #random horizontal flip

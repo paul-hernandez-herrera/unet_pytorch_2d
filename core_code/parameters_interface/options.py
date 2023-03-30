@@ -29,13 +29,16 @@ def get_optimizer(option_name: str,
 def get_lr_scheduler(option_name: str, optimizer, **kwargs) -> object:
     default_params: Dict[str, object] = {
         'reduce_on_plateau': {'mode': 'min', 'factor': 0.1, 'patience': 10},
-        'cyclic': {'mode': 'min', 'base_lr': 0.0001, 'max_lr': 0.01, 'step_size_up': 50},
+        'cyclic': {'base_lr': 0.0001, 'max_lr': 0.01, 'step_size_up': 50, 'cycle_momentum': False},
         'cosine_annealing': {'T_max': 50},
         'step': {'step_size': 10, 'gamma': 0.1}
     }
-    params = default_params[option_name]
-    params.update(kwargs)
-    print(params)
+    params_optimizer = default_params[option_name]
+
+    #update to new values
+    params = {k: kwargs[k] if k in kwargs else v for k, v in params_optimizer.items()}
+
+    
     if option_name == 'reduce_on_plateau':
         return ReduceLROnPlateau(optimizer, **params)
     elif option_name == 'cyclic':
@@ -68,26 +71,11 @@ def get_loss_function(option_name: str):
 
 ###################################################################
 
-def get_data_augmentation(hflip_flag = True,
-                          vflip_flag = True,
-                          shear_flag = True,
-                          zoom_flag = True,
-                          shear_angle = [-5, 5],
-                          zoom_range = [0.8, 1.2],
-                          data_augmentation_flag = True): 
+def get_data_augmentation(data_augmentation_flag = True, **kargs): 
     
-    data_augmentation_object = augmentation_segmentation_task()
+    data_augmentation_object = augmentation_segmentation_task(**kargs)
             
-    if data_augmentation_flag:
-        # Setting the data augmentation flags
-        data_augmentation_object.hflip_flag = hflip_flag
-        data_augmentation_object.vflip_flag = vflip_flag
-        data_augmentation_object.shear_flag = shear_flag
-        data_augmentation_object.zoom_flag = zoom_flag
-        
-        data_augmentation_object.shear_angle = shear_angle
-        data_augmentation_object.zoom_range = zoom_range
-    else:
+    if not(data_augmentation_flag):
         data_augmentation_object = None
         
     return data_augmentation_object
