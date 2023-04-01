@@ -77,7 +77,7 @@ def predict_model(model, input_path, folder_output, device = 'cpu'):
             util.imwrite(Path(folder_output, Path(img_file_name).stem + '_prob.tif'), 255*probability)
     return 
 
-def create_model_output_directory(model_output_folder):
+def get_model_outputdir(model_output_folder):
     if model_output_folder is None:
         folder_root = Path(__file__).absolute().parent
         current_time = datetime.now().strftime('%Y_%m_%d_Time_%H_%M_%S')

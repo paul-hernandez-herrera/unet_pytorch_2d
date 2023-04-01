@@ -1,7 +1,7 @@
 import argparse, torch, copy, platform
 from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
-from .deeplearning_util import train_one_epoch, calculate_validation_loss, create_model_output_directory
+from .deeplearning_util import train_one_epoch, calculate_validation_loss, get_model_outputdir
 
 
 
@@ -17,7 +17,7 @@ def train_model(model,
                 checkpoint_frequency = 10,
                 lr_scheduler = None):
     
-    output_dir = create_model_output_directory(output_dir)
+    output_dir = get_model_outputdir(output_dir)
     
     writer = SummaryWriter(log_dir = Path(output_dir, 'runs/'))
     
