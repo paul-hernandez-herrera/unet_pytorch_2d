@@ -4,7 +4,6 @@ from pathlib import Path
 import copy
 from .deeplearning_util import train_one_epoch, compute_validation_loss, get_model_outputdir
 import platform
-import torchvision
 from torch.utils.tensorboard import SummaryWriter
 
 def train_model(model, 
@@ -21,7 +20,7 @@ def train_model(model,
     
     output_folder = get_model_outputdir(get_model_outputdir)
     
-    writer = SummaryWriter()
+    writer = SummaryWriter(log_dir = Path(output_folder, 'runs/'))
     
     if (torch.__version__>= '2.0.0') & (platform.system() != 'Windows'):
         model = torch.compile(model, mode= 'reduce-overhead')
@@ -36,9 +35,11 @@ def train_model(model,
         model_loss = train_one_epoch(model, train_dataloader, optimizer, list_loss_functions, device)
         print(f"epoch loss: {model_loss}")
         
+        val_loss = 0
         if len(validation_dataloader)>0:
             # if there is data available in the validation dataloader, the validation loss should be computed. Otherwise we use the loss value from the test data
-            model_loss = compute_validation_loss(model, validation_dataloader, list_loss_functions, device)
+            val_loss = compute_validation_loss(model, validation_dataloader, list_loss_functions, device)
+            model_loss = val_loss
         
         if lr_scheduler != None:
             lr_scheduler.step(model_loss)
@@ -49,8 +50,11 @@ def train_model(model,
         if model_checkpoint & ((epoch%model_checkpoint_frequency) ==0):
             torch.save(model.state_dict(), Path(output_folder, f"model_{epoch}.pth"))
         
-        print(optimizer.param_groups[0]['lr'])
+        writer.add_scalars('training model', {'train_loss': model_loss, 'val_loss': val_loss}, epoch)
+        
+        writer.add_scalars('learning_rate', optimizer.param_groups[0]['lr'] , epoch)
             
+    writer.close()
     torch.save(model.state_dict(), Path(output_folder, f"last_model_e{epochs}.pth"))
     torch.save(best_model_state_dict, Path(output_folder, f"best_model_e{best_epoch}.pth"))
     return model             
