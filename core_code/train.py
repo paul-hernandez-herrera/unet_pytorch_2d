@@ -1,62 +1,57 @@
-import argparse 
-import torch
+import argparse, torch, copy, platform
 from pathlib import Path
-import copy
-from .deeplearning_util import train_one_epoch, compute_validation_loss, get_model_outputdir
-import platform
 from torch.utils.tensorboard import SummaryWriter
+from .deeplearning_util import train_one_epoch, calculate_validation_loss, create_model_output_directory
+
+
 
 def train_model(model, 
-                train_dataloader, 
-                list_loss_functions,
+                train_loader, 
+                loss_functions,
                 optimizer,
-                output_folder = None,
+                output_dir = None,
                 device = None,
                 epochs = 100, 
-                validation_dataloader = [],                  
-                model_checkpoint = False, 
-                model_checkpoint_frequency = 10,
+                validation_loader = None,                  
+                save_checkpoint = False, 
+                checkpoint_frequency = 10,
                 lr_scheduler = None):
     
-    output_folder = get_model_outputdir(get_model_outputdir)
+    output_dir = create_model_output_directory(output_dir)
     
-    writer = SummaryWriter(log_dir = Path(output_folder, 'runs/'))
+    writer = SummaryWriter(log_dir = Path(output_dir, 'runs/'))
     
     if (torch.__version__>= '2.0.0') & (platform.system() != 'Windows'):
         model = torch.compile(model, mode= 'reduce-overhead')
     
-    if device == None:
-        device = "cuda" if torch.cuda.is_available() else "cpu"
+    device = device or "cuda" if torch.cuda.is_available() else "cpu"
         
     current_minimum_loss = float('inf')
     
     for epoch in range(1, epochs+1):
-        print('Running iteration ' + str(epoch) + '/' +str(epochs))
-        model_loss = train_one_epoch(model, train_dataloader, optimizer, list_loss_functions, device)
+        print(f"Running iteration {epoch}/{epochs}")
+        model_loss = train_one_epoch(model, train_loader, optimizer, loss_functions, device)
         print(f"epoch loss: {model_loss}")
         
-        val_loss = 0
-        if len(validation_dataloader)>0:
-            # if there is data available in the validation dataloader, the validation loss should be computed. Otherwise we use the loss value from the test data
-            val_loss = compute_validation_loss(model, validation_dataloader, list_loss_functions, device)
-            model_loss = val_loss
+        val_loss = calculate_validation_loss(model, validation_loader, loss_functions, device) if validation_loader else 0
+        model_loss = val_loss or model_loss
         
-        if lr_scheduler != None:
+        if lr_scheduler:
             lr_scheduler.step(model_loss)
             
         if model_loss < current_minimum_loss:
             best_model_state_dict, current_minimum_loss, best_epoch = copy.deepcopy(model.state_dict()), model_loss, epoch
             
-        if model_checkpoint & ((epoch%model_checkpoint_frequency) ==0):
-            torch.save(model.state_dict(), Path(output_folder, f"model_{epoch}.pth"))
+        if save_checkpoint & ((epoch%checkpoint_frequency) ==0):
+            torch.save(model.state_dict(), Path(output_dir, f"model_{epoch}.pth"))
         
         writer.add_scalars('training model', {'train_loss': model_loss, 'val_loss': val_loss}, epoch)
         
         writer.add_scalars('learning_rate', optimizer.param_groups[0]['lr'] , epoch)
             
     writer.close()
-    torch.save(model.state_dict(), Path(output_folder, f"last_model_e{epochs}.pth"))
-    torch.save(best_model_state_dict, Path(output_folder, f"best_model_e{best_epoch}.pth"))
+    torch.save(model.state_dict(), Path(output_dir, f"last_model_e{epochs}.pth"))
+    torch.save(best_model_state_dict, Path(output_dir, f"best_model_e{best_epoch}.pth"))
     return model             
         
 

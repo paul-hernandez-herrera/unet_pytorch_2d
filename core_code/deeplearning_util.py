@@ -35,7 +35,7 @@ def train_one_epoch(model, train_dataloader, optimizer, list_loss_functions, dev
         
     return epoch_loss
 
-def compute_validation_loss(model, validation_dataloader, list_loss_functions, device):
+def calculate_validation_loss(model, validation_dataloader, list_loss_functions, device):
     model.train(True) #set the model in training mode
     val_loss = 0
     with torch.no_grad():  # Disable gradient calculations during evaluation
@@ -77,7 +77,7 @@ def predict_model(model, input_path, folder_output, device = 'cpu'):
             util.imwrite(Path(folder_output, Path(img_file_name).stem + '_prob.tif'), 255*probability)
     return 
 
-def get_model_outputdir(model_output_folder):
+def create_model_output_directory(model_output_folder):
     if model_output_folder is None:
         folder_root = Path(__file__).absolute().parent
         current_time = datetime.now().strftime('%Y_%m_%d_Time_%H_%M_%S')
