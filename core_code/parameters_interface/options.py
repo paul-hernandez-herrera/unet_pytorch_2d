@@ -5,6 +5,7 @@ from ..loss.dice_loss import DiceLoss2D
 from ..UNet_2D.data_augmentation import augmentation_segmentation_task
 from typing import Dict
 
+
 def get_optimizer(option_name: str, 
                   model,
                   lr = 0.0001,

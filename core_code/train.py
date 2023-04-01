@@ -2,20 +2,26 @@ import argparse
 import torch
 from pathlib import Path
 import copy
-from .deeplearning_util import train_one_epoch, compute_validation_loss
+from .deeplearning_util import train_one_epoch, compute_validation_loss, get_model_outputdir
 import platform
+import torchvision
+from torch.utils.tensorboard import SummaryWriter
 
 def train_model(model, 
                 train_dataloader, 
                 list_loss_functions,
                 optimizer,
+                output_folder = None,
                 device = None,
                 epochs = 100, 
-                validation_dataloader = [], 
-                model_output_folder = '', 
+                validation_dataloader = [],                  
                 model_checkpoint = False, 
                 model_checkpoint_frequency = 10,
                 lr_scheduler = None):
+    
+    output_folder = get_model_outputdir(get_model_outputdir)
+    
+    writer = SummaryWriter()
     
     if (torch.__version__>= '2.0.0') & (platform.system() != 'Windows'):
         model = torch.compile(model, mode= 'reduce-overhead')
@@ -41,14 +47,16 @@ def train_model(model,
             best_model_state_dict, current_minimum_loss, best_epoch = copy.deepcopy(model.state_dict()), model_loss, epoch
             
         if model_checkpoint & ((epoch%model_checkpoint_frequency) ==0):
-            torch.save(model.state_dict(), Path(model_output_folder, f"model_{epoch}.pth"))
+            torch.save(model.state_dict(), Path(output_folder, f"model_{epoch}.pth"))
         
         print(optimizer.param_groups[0]['lr'])
             
-    torch.save(model.state_dict(), Path(model_output_folder, f"last_model_e{epochs}.pth"))
-    torch.save(best_model_state_dict, Path(model_output_folder, f"best_model_e{best_epoch}.pth"))
+    torch.save(model.state_dict(), Path(output_folder, f"last_model_e{epochs}.pth"))
+    torch.save(best_model_state_dict, Path(output_folder, f"best_model_e{best_epoch}.pth"))
     return model             
         
+
+    
     
     
 if __name__== '__main__':
