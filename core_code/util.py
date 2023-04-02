@@ -4,13 +4,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 def imread(filename):
-    ext = Path(filename).suffix
-    if ext== '.tif' or ext=='.tiff':
+    if Path(filename).suffix in {'.tif', '.tiff'}:
         return tifffile.imread(filename)
         
 def imwrite(filename, arr):
-    ext = Path(filename).suffix
-    if ext== '.tif' or ext=='.tiff':
+    if Path(filename).suffix in {'.tif', '.tiff'}:
         tifffile.imsave(filename, arr) 
         
         
