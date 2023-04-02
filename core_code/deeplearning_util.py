@@ -58,25 +58,33 @@ def calculate_validation_loss(model, validation_loader, list_loss_functions, dev
         
     return val_loss
 
-def predict_model(model, input_path, folder_output, device = 'cpu'):
+def predict_model(model, input_path, folder_output=None, device = 'cpu'):
     file_paths = util.get_image_file_paths(input_path)
     
-    model.train(False) #set the model in training mode
-    with torch.no_grad():  # Disable gradient calculations during evaluation
-        for img_file_name in file_paths: 
+    # Set output folder path
+    folder_output = folder_output or Path(file_paths[0]).parent / 'output'
+    folder_output.mkdir(parents=True, exist_ok=True)
+    
+    # Set model to evaluation mode
+    model.eval()
+    
+    # Disable gradient calculations during evaluation
+    with torch.no_grad():  
+        for img_file_path in file_paths: 
+            # Load input image as tensor
+            img = torch.tensor(util.imread(img_file_path).astype(np.float32)).unsqueeze(0).to(device=device)
             
-            img = torch.tensor(util.imread(img_file_name).astype(np.float32)).float()
+            # Apply model to input image
+            network_output = model(img) 
             
-            img = img[None]
+            probability = torch.sigmoid(network_output).squeeze().cpu().numpy()
             
-            img = img.to(device=device, dtype=torch.float32)
+            # Save output probability map as image
+            output_file_path = Path(folder_output, Path(img_file_path).stem + '_prob.tif')
             
-            network_output = model(img) #applying the model to the input images
+            util.imwrite(output_file_path, 255 * probability)
             
-            probability = torch.sigmoid(network_output).squeeze().numpy()
-            
-            print(Path(folder_output, Path(img_file_name).stem + '_prob.tif'))
-            util.imwrite(Path(folder_output, Path(img_file_name).stem + '_prob.tif'), 255*probability)
+            print(output_file_path)
     return 
 
 def get_model_outputdir(model_output_folder):
