@@ -19,7 +19,7 @@ def train_model(model,
     
     output_dir = get_model_outputdir(output_dir)
     
-    writer = SummaryWriter(log_dir = Path(output_dir, 'runs/'))
+    writer = SummaryWriter(log_dir = Path(output_dir, 'tensorboard/'))
     
     if (torch.__version__>= '2.0.0') & (platform.system() != 'Windows'):
         model = torch.compile(model, mode= 'reduce-overhead')
@@ -33,21 +33,21 @@ def train_model(model,
         model_loss = train_one_epoch(model, train_loader, optimizer, loss_functions, device)
         print(f"epoch loss: {model_loss}")
         
-        val_loss = calculate_validation_loss(model, validation_loader, loss_functions, device) if validation_loader else 0
-        model_loss = val_loss or model_loss
+        val_loss = calculate_validation_loss(model, validation_loader, loss_functions, device) if validation_loader else None
+        val_loss = val_loss or model_loss
         
         if lr_scheduler:
             lr_scheduler.step(model_loss)
             
-        if model_loss < current_minimum_loss:
-            best_model_state_dict, current_minimum_loss, best_epoch = copy.deepcopy(model.state_dict()), model_loss, epoch
+        if val_loss < current_minimum_loss:
+            best_model_state_dict, current_minimum_loss, best_epoch = copy.deepcopy(model.state_dict()), val_loss, epoch
             
         if save_checkpoint & ((epoch%checkpoint_frequency) ==0):
             torch.save(model.state_dict(), Path(output_dir, f"model_{epoch}.pth"))
         
-        writer.add_scalars('training model', {'train_loss': model_loss, 'val_loss': val_loss}, epoch)
+        writer.add_scalars('training model', {'train loss': model_loss, 'val loss': val_loss}, epoch)
         
-        writer.add_scalars('learning_rate', optimizer.param_groups[0]['lr'] , epoch)
+        writer.add_scalar('learning rate', optimizer.param_groups[0]['lr'] , epoch)
             
     writer.close()
     torch.save(model.state_dict(), Path(output_dir, f"last_model_e{epochs}.pth"))

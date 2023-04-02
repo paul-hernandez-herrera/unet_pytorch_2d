@@ -5,15 +5,15 @@ import numpy as np
 import warnings
 from datetime import datetime
 
-def train_one_epoch(model, train_dataloader, optimizer, list_loss_functions, device):
+def train_one_epoch(model, train_loader, optimizer, list_loss_functions, device):
     #This is the main code responsible for updating the weights of the model for a single epoch
     
     model.train(True) #set the model in training mode
     epoch_loss = 0
-    for batch_iter in train_dataloader: 
+    for batch_iter in train_loader: 
         imgs, targets = batch_iter #getting imgs and target output for current batch
         
-        #we have a tensor in the train_dataloader, move to device
+        #we have a tensor in the train_loader, move to device
         imgs = imgs.to(device= device, dtype = torch.float32)
         targets = targets.to(device= device, dtype = torch.float32)
         #targets = targets.to(device=self.device, dtype=torch.long)
@@ -32,17 +32,18 @@ def train_one_epoch(model, train_dataloader, optimizer, list_loss_functions, dev
         optimizer.step() # update the weights of models using the gradients and the given optimizer
         
         epoch_loss += loss.item()
+    epoch_loss /= len(train_loader.dataset) 
         
     return epoch_loss
 
-def calculate_validation_loss(model, validation_dataloader, list_loss_functions, device):
+def calculate_validation_loss(model, validation_loader, list_loss_functions, device):
     model.train(True) #set the model in training mode
     val_loss = 0
     with torch.no_grad():  # Disable gradient calculations during evaluation
-        for batch_iter in validation_dataloader: 
+        for batch_iter in validation_loader: 
             imgs, targets = batch_iter #getting imgs and target output for current batch
             
-            #we have a tensor in the train_dataloader, move to device
+            #we have a tensor in the validation_loader, move to device
             imgs = imgs.to(device= device, dtype = torch.float32)
             targets = targets.to(device= device, dtype = torch.float32)
             
@@ -53,6 +54,7 @@ def calculate_validation_loss(model, validation_dataloader, list_loss_functions,
                 loss += list_loss_functions[i](network_output, targets) # compute the error between the network output and target output
             
             val_loss += loss.item()
+        val_loss /= len(validation_loader.dataset)
         
     return val_loss
 
