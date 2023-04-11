@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 import warnings
 from datetime import datetime
+from .parameters_interface import ipwidget_basic
+from .parameters_interface.parameters_widget import parameters_device
 
 def train_one_epoch(model, train_loader, optimizer, list_loss_functions, device):
     #This is the main code responsible for updating the weights of the model for a single epoch
@@ -69,6 +71,7 @@ def predict_model(model, input_path, folder_output=None, device = 'cpu'):
     model.eval()
     
     # Disable gradient calculations during evaluation
+    output_file_paths = []
     with torch.no_grad():  
         for img_file_path in file_paths: 
             # Load input image as tensor
@@ -85,7 +88,8 @@ def predict_model(model, input_path, folder_output=None, device = 'cpu'):
             util.imwrite(output_file_path, 255 * probability)
             
             print(output_file_path)
-    return 
+            output_file_paths.append(output_file_path)
+    return output_file_paths
 
 def get_model_outputdir(model_output_folder):
     if model_output_folder is None:
@@ -96,3 +100,7 @@ def get_model_outputdir(model_output_folder):
         if Path(__file__).parent.stem != 'core_code':
             warnings.warn(f"We assume that the parent folder of function {Path(__file__).stem} is: core_code")
     return model_output_folder
+
+
+    
+    
