@@ -6,6 +6,7 @@ import warnings
 from datetime import datetime
 from .parameters_interface import ipwidget_basic
 from .parameters_interface.parameters_widget import parameters_device
+from .core_code.UNet_2D.UNet2d_model import Classic_U_Net_2D
 
 def train_one_epoch(model, train_loader, optimizer, list_loss_functions, device):
     #This is the main code responsible for updating the weights of the model for a single epoch
@@ -80,16 +81,16 @@ def predict_model(model, input_path, folder_output=None, device = 'cpu'):
             # Apply model to input image
             network_output = model(img) 
             
+            # Calculate probability map and convert to numpy array
             probability = torch.sigmoid(network_output).squeeze().cpu().numpy()
             
             # Save output probability map as image
             output_file_path = Path(folder_output, Path(img_file_path).stem + '_prob.tif')
-            
             util.imwrite(output_file_path, 255 * probability)
             
             print(output_file_path)
             output_file_paths.append(output_file_path)
-    return output_file_paths
+    return {"inputs": file_paths, "outputs": output_file_paths}
 
 def get_model_outputdir(model_output_folder):
     if model_output_folder is None:
@@ -101,6 +102,27 @@ def get_model_outputdir(model_output_folder):
             warnings.warn(f"We assume that the parent folder of function {Path(__file__).stem} is: core_code")
     return model_output_folder
 
-
+class PredictSegmentationInteractive:
+    def __init__(self):
+        #setting the parameters required to predict images
+        # Set parameters required to predict images
+        self.model_path_w = ipwidget_basic.set_text('Model path:', 'Insert path here')
+        self.folder_path_w = ipwidget_basic.set_text('Input path:', 'Insert path here')
+        self.folder_output_w = ipwidget_basic.set_text('Output path:', 'Insert path here')
+        self.device_w = parameters_device()
+        
+    def run(self):
+        model_path = self.model_path_w.value
+        device = self.p_device.get_device()
+        
+        state_dict = torch.load(model_path, map_location= device)
+        
+        n_channels_input = state_dict[list(state_dict.keys())[0]].size(1)
+        n_channels_target = state_dict[list(state_dict.keys())[-1]].size(0)
+        
+        model = Classic_U_Net_2D(n_channels_input, n_channels_target).to(device= device)
     
-    
+        # Predict images and return list of output file paths
+        file_paths = predict_model(model, self.folder_path_w.value, folder_output = self.folder_output_w.value, device = device)
+        
+        return file_paths
