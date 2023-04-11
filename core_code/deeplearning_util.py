@@ -6,7 +6,7 @@ import warnings
 from datetime import datetime
 from .parameters_interface import ipwidget_basic
 from .parameters_interface.parameters_widget import parameters_device
-from .core_code.UNet_2D.UNet2d_model import Classic_U_Net_2D
+from .UNet_2D.UNet2d_model import Classic_U_Net_2D
 
 def train_one_epoch(model, train_loader, optimizer, list_loss_functions, device):
     #This is the main code responsible for updating the weights of the model for a single epoch
@@ -65,7 +65,7 @@ def predict_model(model, input_path, folder_output=None, device = 'cpu'):
     file_paths = util.get_image_file_paths(input_path)
     
     # Set output folder path
-    folder_output = folder_output or Path(file_paths[0]).parent / 'output'
+    folder_output = Path(folder_output) or Path(file_paths[0]).parent / 'output'
     folder_output.mkdir(parents=True, exist_ok=True)
     
     # Set model to evaluation mode
@@ -113,7 +113,7 @@ class PredictSegmentationInteractive:
         
     def run(self):
         model_path = self.model_path_w.value
-        device = self.p_device.get_device()
+        device = self.device_w.get_device()
         
         state_dict = torch.load(model_path, map_location= device)
         
