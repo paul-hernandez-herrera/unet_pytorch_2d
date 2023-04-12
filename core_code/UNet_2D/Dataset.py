@@ -1,4 +1,4 @@
-from .. import util
+from ..util import util
 from torch.utils.data import Dataset
 from pathlib import Path
 import numpy as np
@@ -19,7 +19,7 @@ class CustomImageDataset(Dataset):
         self.data_augmentation_flag = False
         
         #reading all files in target folder:
-        self.file_names = [item.name for item in list(folder_input.glob('*.tiff')) + list(folder_input.glob('*.tif')) if item.is_file()] 
+        self.file_names = [item.name for item in list(self.folder_input.glob('*.tiff')) + list(self.folder_input.glob('*.tif')) if item.is_file()] 
         
         
     def __len__(self):

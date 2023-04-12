@@ -1,7 +1,7 @@
 import argparse, torch, copy, platform
 from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
-from .deeplearning_util import train_one_epoch, calculate_validation_loss, get_model_outputdir
+from .util.deeplearning_util import train_one_epoch, calculate_validation_loss, get_model_outputdir
 
 
 
@@ -31,13 +31,13 @@ def train_model(model,
     for epoch in range(1, epochs+1):
         print(f"Running iteration {epoch}/{epochs}")
         model_loss = train_one_epoch(model, train_loader, optimizer, loss_functions, device)
-        print(f"epoch loss: {model_loss}")
+        print(f"epoch loss: {model_loss} --- lr = {optimizer.param_groups[0]['lr']}")
         
         val_loss = calculate_validation_loss(model, validation_loader, loss_functions, device) if validation_loader else None
         val_loss = val_loss or model_loss
         
         if lr_scheduler:
-            lr_scheduler.step(model_loss)
+            lr_scheduler.step(val_loss)
             
         if val_loss < current_minimum_loss:
             best_model_state_dict, current_minimum_loss, best_epoch = copy.deepcopy(model.state_dict()), val_loss, epoch
