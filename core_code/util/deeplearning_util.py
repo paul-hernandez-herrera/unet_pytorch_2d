@@ -1,50 +1,51 @@
-import torch
-from . import util
-from pathlib import Path
+import torch, warnings
 import numpy as np
-import warnings
+from pathlib import Path
 from datetime import datetime
-from .parameters_interface import ipwidget_basic
-from .parameters_interface.parameters_widget import parameters_device
-from .UNet_2D.UNet2d_model import Classic_U_Net_2D
+from . import util
+from ..parameters_interface import ipwidget_basic
+from ..parameters_interface.parameters_widget import parameters_device
+from ..UNet_2D.UNet2d_model import Classic_U_Net_2D
 
-def train_one_epoch(model, train_loader, optimizer, list_loss_functions, device):
+def train_one_epoch(model, train_loader, optimizer, loss_functions, device):
     #This is the main code responsible for updating the weights of the model for a single epoch
     
-    model.train(True) #set the model in training mode
+    model.train() #set the model in training mode
     epoch_loss = 0
-    for batch_iter in train_loader: 
-        imgs, targets = batch_iter #getting imgs and target output for current batch
+    
+    for batch in train_loader: 
+        imgs, targets = batch #getting imgs and target output for current batch
         
         #we have a tensor in the train_loader, move to device
         imgs = imgs.to(device= device, dtype = torch.float32)
         targets = targets.to(device= device, dtype = torch.float32)
         #targets = targets.to(device=self.device, dtype=torch.long)
         
-        optimizer.zero_grad()  #Sets the gradients of all optimized torch.Tensor s to zero.
+        optimizer.zero_grad()  # sets to zero the gradients of the optimizer
         
-        network_output = model(imgs) #applying the model to the input images
+        # Forward pass
+        network_output = model(imgs) 
         
-        loss = 0
-        for i in range(0,len(list_loss_functions)):
-            loss += list_loss_functions[i](network_output, targets) # compute the error between the network output and target output
+        # Compute the loss
+        loss = sum([f(network_output, targets) for f in loss_functions]) # compute the error between the network output and target output
         
-        
+        # Backward pass
         loss.backward() # compute the gradients given the loss value
         
+        # update weights
         optimizer.step() # update the weights of models using the gradients and the given optimizer
         
         epoch_loss += loss.item()
-    epoch_loss /= len(train_loader.dataset) 
+    epoch_loss /= len(train_loader.dataset)
         
     return epoch_loss
 
-def calculate_validation_loss(model, validation_loader, list_loss_functions, device):
-    model.train(True) #set the model in training mode
+def calculate_validation_loss(model, validation_loader, loss_functions, device):
+    model.eval() #set the model in evaluation mode
     val_loss = 0
-    with torch.no_grad():  # Disable gradient calculations during evaluation
-        for batch_iter in validation_loader: 
-            imgs, targets = batch_iter #getting imgs and target output for current batch
+    with torch.no_grad():  # disable gradient calculations during evaluation
+        for batch in validation_loader: 
+            imgs, targets = batch #getting imgs and target output for current batch
             
             #we have a tensor in the validation_loader, move to device
             imgs = imgs.to(device= device, dtype = torch.float32)
@@ -52,9 +53,7 @@ def calculate_validation_loss(model, validation_loader, list_loss_functions, dev
             
             network_output = model(imgs) #applying the model to the input images
             
-            loss = 0
-            for i in range(0,len(list_loss_functions)):
-                loss += list_loss_functions[i](network_output, targets) # compute the error between the network output and target output
+            loss = sum([loss_fn(network_output, targets) for loss_fn in loss_functions]) # compute the error between the network output and target output
             
             val_loss += loss.item()
         val_loss /= len(validation_loader.dataset)
@@ -65,8 +64,8 @@ def predict_model(model, input_path, folder_output=None, device = 'cpu'):
     file_paths = util.get_image_file_paths(input_path)
     
     # Set output folder path
-    folder_output = Path(folder_output) or Path(file_paths[0]).parent / 'output'
-    folder_output.mkdir(parents=True, exist_ok=True)
+    folder_output = folder_output or Path(file_paths[0]).parent / 'output'
+    Path(folder_output).mkdir(parents=True, exist_ok=True)
     
     # Set model to evaluation mode
     model.eval()
