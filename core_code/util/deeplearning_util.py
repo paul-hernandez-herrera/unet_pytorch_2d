@@ -60,12 +60,12 @@ def calculate_validation_loss(model, validation_loader, loss_functions, device):
         
     return val_loss
 
-def predict_model(model, input_path, folder_output=None, device = 'cpu'):
+def predict_model(model, input_path, output_folder=None, device = 'cpu'):
     file_paths = util.get_image_file_paths(input_path)
     
     # Set output folder path
-    folder_output = folder_output or Path(file_paths[0]).parent / 'output'
-    Path(folder_output).mkdir(parents=True, exist_ok=True)
+    output_folder = output_folder or Path(file_paths[0]).parent / 'output'
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
     
     # Set model to evaluation mode
     model.eval()
@@ -84,7 +84,7 @@ def predict_model(model, input_path, folder_output=None, device = 'cpu'):
             probability = torch.sigmoid(network_output).squeeze().cpu().numpy()
             
             # Save output probability map as image
-            output_file_path = Path(folder_output, Path(img_file_path).stem + '_prob.tif')
+            output_file_path = Path(output_folder, Path(img_file_path).stem + '_prob.tif')
             util.imwrite(output_file_path, 255 * probability)
             
             print(output_file_path)
@@ -92,10 +92,8 @@ def predict_model(model, input_path, folder_output=None, device = 'cpu'):
     return {"inputs": file_paths, "outputs": output_file_paths}
 
 def get_model_outputdir(model_output_folder):
-    if model_output_folder is None:
-        folder_root = Path(__file__).absolute().parent
-        current_time = datetime.now().strftime('%Y_%m_%d_Time_%H_%M_%S')
-        model_output_folder = Path(folder_root, 'model_training_results', current_time)
+    if not model_output_folder:
+        model_output_folder = Path(Path(__file__).absolute().parent, 'model_training_results', datetime.now().strftime('%Y_%m_%d_Time_%H_%M_%S'))
         model_output_folder.mkdir(parents=True, exist_ok=True)
         if Path(__file__).parent.stem != 'core_code':
             warnings.warn(f"We assume that the parent folder of function {Path(__file__).stem} is: core_code")
