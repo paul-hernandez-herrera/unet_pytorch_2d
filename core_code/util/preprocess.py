@@ -1,6 +1,6 @@
 import numpy as np
 
-def preprocess_image(image, percentile_range = [2,98], normalization_range = [0,1]):
+def preprocess_image(image, percentile_range = [1,99], normalization_range = [0,1]):
     """
     Normalize each channel of an image separately by cropping the pixel intensity range to a given percentile range
     and then scaling the values to a given normalization range.
@@ -9,6 +9,9 @@ def preprocess_image(image, percentile_range = [2,98], normalization_range = [0,
     # Check if the input is a numpy ndarray
     if not isinstance(image, np.ndarray):
         raise TypeError("Input must be a numpy ndarray.")
+        
+    if image.ndim==2:
+        image = image[None]        
         
     normalized_channels = []        
     for channel_idx in range(image.shape[0]):
@@ -37,10 +40,13 @@ def crop_to_percentile_range(img_channel, percentile_range):
 def normalize_intensity_range(img_channel, normalization_range=[0, 1]):
     """
     Normalize the pixel intensity values of an image channel to a given range.
+    normalization_range = [a, b]
 
     """
-    min_val, max_val = normalization_range
-        
-    return (img_channel - min_val) / (max_val - min_val)
+    min_val, max_val = np.min(img_channel), np.max(img_channel)
+    a, b = normalization_range
     
+    # Normalize to range [0,1]
+    img_channel = (img_channel - min_val) / (max_val - min_val)
     
+    return (b - a) * img_channel + a 
