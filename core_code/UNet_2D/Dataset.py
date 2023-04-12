@@ -6,36 +6,42 @@ from torch import tensor
 from ..util.preprocess import preprocess_image
 
 class CustomImageDataset(Dataset):
+    """
+    The purpose of this class is to load input and target image pairs from two separate directories, 
+    preprocess the input image if required, and return them as a tuple of PyTorch tensors.    
+    """
     def __init__(self, folder_input, folder_target, enable_preprocess = False):
         #saving the variables
-        self.folder_input = folder_input
-        self.folder_target = folder_target
-        
+        self.folder_input = Path(folder_input)
+        self.folder_target = Path(folder_target)
         self.enable_preprocess = enable_preprocess
         
         self.data_augmentation_flag = False
         
         #reading all files in target folder:
-        self.file_names = [item.name for item in Path(folder_input).iterdir() if ((item.is_file() & (item.suffix=='.tif') | (item.suffix=='.tiff')))] 
+        self.file_names = [item.name for item in list(folder_input.glob('*.tiff')) + list(folder_input.glob('*.tif')) if item.is_file()] 
         
         
     def __len__(self):
         return len(self.file_names)
         
     def __getitem__(self, idx):
-        #reading input image as tensor float (input) and uint8 (labels)
+        #reading input and target images
         input_img = util.imread(Path(self.folder_input, self.file_names[idx]))
+        target_img = util.imread(Path(self.folder_target, self.file_names[idx]))
+        
+        #preprocess image if required
         if self.enable_preprocess:
             input_img = preprocess_image(input_img)
+            
+        #converting numpy to tensor
         input_img = tensor(input_img.astype(np.float32)).float()
-        target_img = tensor(util.imread(Path(self.folder_target, self.file_names[idx])).astype(np.uint8) )
+        target_img = tensor(target_img.astype(np.uint8))
 
 
         #U-Net requires dimensions to be [C,W,H]. Make sure that we have Channel dimension
-        if len(input_img.shape)==2:
-            input_img = input_img[None]
-        if len(target_img.shape)==2:
-            target_img = target_img[None]
+        input_img = input_img.unsqueeze(0) if input_img.dim() == 2 else input_img
+        target_img = target_img.unsqueeze(0) if target_img.dim() == 2 else target_img
             
         
         if self.data_augmentation_flag:
@@ -46,6 +52,12 @@ class CustomImageDataset(Dataset):
 
 
     def set_data_augmentation(self, augmentation_flag = False, data_augmentation_object = None):
+        """
+        this method is used to set a data augmentation flag and object. 
+        The data_augmentation_flag is a boolean indicating whether data augmentation should be performed or not
+        data_augmentation_object is an object containing the data augmentation methods to be applied.
+        """
+        
         self.data_augmentation_flag = augmentation_flag
         self.data_augmentation_object = data_augmentation_object
         
