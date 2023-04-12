@@ -3,13 +3,15 @@ from torch.utils.data import Dataset
 from pathlib import Path
 import numpy as np
 from torch import tensor
-from torchvision.transforms import ToTensor
+from ..util.preprocess import preprocess_image
 
 class CustomImageDataset(Dataset):
     def __init__(self, folder_input, folder_target, enable_preprocess = False):
         #saving the variables
         self.folder_input = folder_input
         self.folder_target = folder_target
+        
+        self.enable_preprocess = enable_preprocess
         
         self.data_augmentation_flag = False
         
@@ -22,7 +24,10 @@ class CustomImageDataset(Dataset):
         
     def __getitem__(self, idx):
         #reading input image as tensor float (input) and uint8 (labels)
-        input_img = tensor(util.imread(Path(self.folder_input, self.file_names[idx])).astype(np.float32)).float()
+        input_img = util.imread(Path(self.folder_input, self.file_names[idx]))
+        if self.enable_preprocess:
+            input_img = preprocess_image(input_img)
+        input_img = tensor(input_img.astype(np.float32)).float()
         target_img = tensor(util.imread(Path(self.folder_target, self.file_names[idx])).astype(np.uint8) )
 
 
@@ -44,6 +49,5 @@ class CustomImageDataset(Dataset):
         self.data_augmentation_flag = augmentation_flag
         self.data_augmentation_object = data_augmentation_object
         
-
         
         
