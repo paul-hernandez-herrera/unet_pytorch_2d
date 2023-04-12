@@ -3,9 +3,10 @@ from torch.utils.data import Dataset
 from pathlib import Path
 import numpy as np
 from torch import tensor
+from torchvision.transforms import ToTensor
 
 class CustomImageDataset(Dataset):
-    def __init__(self, folder_input, folder_target):
+    def __init__(self, folder_input, folder_target, enable_preprocess = False):
         #saving the variables
         self.folder_input = folder_input
         self.folder_target = folder_target
@@ -42,3 +43,7 @@ class CustomImageDataset(Dataset):
     def set_data_augmentation(self, augmentation_flag = False, data_augmentation_object = None):
         self.data_augmentation_flag = augmentation_flag
         self.data_augmentation_object = data_augmentation_object
+        
+
+        
+        
