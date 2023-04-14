@@ -1,11 +1,8 @@
 import torch, warnings
 from pathlib import Path
 from datetime import datetime
-
-from ..parameters_interface import ipwidget_basic
-from ..parameters_interface.parameters_widget import parameters_device
 from ..UNet_2D.UNet2d_model import Classic_U_Net_2D
-from ..predict import predict_model
+
 
 
 def train_one_epoch(model, train_loader, optimizer, loss_functions, device):
@@ -79,24 +76,5 @@ def load_model(model_path, device = 'cpu'):
     
     return model
     
-class PredictSegmentationInteractive:
-    def __init__(self):
-        #setting the parameters required to predict images
-        # Set parameters required to predict images
-        self.model_path_w = ipwidget_basic.set_text('Model path:', 'Insert path here')
-        self.folder_path_w = ipwidget_basic.set_text('Input path:', 'Insert path here')
-        self.folder_output_w = ipwidget_basic.set_text('Output path:', 'Insert path here')
-        self.device_w = parameters_device()
-        
-    def run(self):
-        model_path = self.model_path_w.value
-        device = self.device_w.get_device()
-        
-        model = load_model(model_path = model_path, device = device)
-    
-        # Predict images and return list of output file paths
-        file_paths = predict_model(model, self.folder_path_w.value, folder_output = self.folder_output_w.value, device = device)
-        
-        return file_paths
     
     
