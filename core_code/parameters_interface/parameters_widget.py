@@ -262,7 +262,7 @@ class parameters_data_augmentation():
         self.hflip_flag_w = ipwidget_basic.set_checkbox('Horizontal flip', True, show = False)
         self.vflip_flag_w = ipwidget_basic.set_checkbox('Vertical flip', True, show = False)
         self.shear_flag_w = ipwidget_basic.set_checkbox('Shear', True, show = False)
-        self.shear_angle_w = ipwidget_basic.set_intSlider('Angle', dummy.shear_angle[0], dummy.shear_angle[1], -180, 180, show = False)
+        self.shear_angle_w = ipwidget_basic.set_IntRangeSlider('Angle', dummy.shear_angle[0], dummy.shear_angle[1], -180, 180, show = False)
         self.zoom_flag_w = ipwidget_basic.set_checkbox('Zoom', True, show = False)
         self.zoom_range_w = ipwidget_basic.set_FloatRangeSlider('Zoom', dummy.zoom_range[0], dummy.zoom_range[1], 0.1, 2, show = False)
         
