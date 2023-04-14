@@ -52,7 +52,7 @@ class PredictSegmentationInteractive:
         device = self.device_w.get_device()
     
         # Predict images and return list of output file paths
-        file_paths = predict_model(self.folder_path_w.value, model_path = model_path, folder_output = self.folder_output_w.value, device = device)
+        file_paths = predict_model(self.folder_path_w.value, model_path = model_path, output_folder = self.folder_output_w.value, device = device)
         
         return file_paths
 
