@@ -1,10 +1,6 @@
 import ipywidgets as widgets
 from IPython.display import display
 
-
-
-
-
 def set_text(string_name, string_default_val, show = True):
     widget_text = widgets.Text(
         value = '',
@@ -42,13 +38,31 @@ def set_checkbox(string_name, default_value, show = True):
         display(widget_checkbox)
     return widget_checkbox
 
-def set_intSlider(string_name, low_val, high_val, min_val, max_val, show = True ):
-    widget_intSlider = widgets.IntRangeSlider(
+def set_IntRangeSlider(string_name, low_val, high_val, min_val, max_val, show = True ):
+    widget_IntRangeSlider = widgets.IntRangeSlider(
         value=[low_val, high_val],
         min= min_val,
         max= max_val,
         step=1,
         description=string_name,
+        disabled=False,
+        continuous_update=False,
+        orientation='horizontal',
+        readout=True,
+        readout_format='d',
+        #layout=widgets.Layout(flex='1 1 auto', width='auto')
+    )
+    if show:
+        display(widget_IntRangeSlider)
+    return widget_IntRangeSlider
+
+def set_IntSlider(string_name, initial_val, min_val, max_val, show = True ):
+    widget_intSlider = widgets.widgets.IntSlider(
+        value = initial_val,
+        min = min_val,
+        max = max_val,
+        step=1,
+        description= string_name,
         disabled=False,
         continuous_update=False,
         orientation='horizontal',
