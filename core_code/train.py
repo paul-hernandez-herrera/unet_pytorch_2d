@@ -15,7 +15,8 @@ def train_model(model,
                 validation_loader = None,                  
                 save_checkpoint = False, 
                 checkpoint_frequency = 10,
-                lr_scheduler = None):
+                lr_scheduler = None,
+                model_id = ''):
     
     output_dir = get_model_outputdir(output_dir)
     
@@ -50,8 +51,8 @@ def train_model(model,
         writer.add_scalar('learning rate', optimizer.param_groups[0]['lr'] , epoch)
             
     writer.close()
-    torch.save(model.state_dict(), Path(output_dir, f"last_model_e{epochs}.pth"))
-    torch.save(best_model_state_dict, Path(output_dir, f"best_model_e{best_epoch}.pth"))
+    torch.save(model.state_dict(), Path(output_dir, f"{model_id}.last_model_e{epochs}.pth"))
+    torch.save(best_model_state_dict, Path(output_dir, f"{model_id}.best_model_e{best_epoch}.pth"))
     return model             
         
 

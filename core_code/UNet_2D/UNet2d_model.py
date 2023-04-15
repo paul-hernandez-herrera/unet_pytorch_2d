@@ -1,7 +1,7 @@
 from . import UNet2d_core
 from torch import nn
 
-class Classic_U_Net_2D(nn.Module):
+class Classic_UNet_2D(nn.Module):
     def __init__(self, input_n_channels, target_n_labels, mode_up = 'conv_transp'):
         super().__init__()
         self.input_n_channels = input_n_channels

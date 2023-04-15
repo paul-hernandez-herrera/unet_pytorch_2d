@@ -1,7 +1,7 @@
 import torch, warnings
 from pathlib import Path
 from datetime import datetime
-from ..UNet_2D.UNet2d_model import Classic_U_Net_2D
+from ..UNet_2D.UNet2d_model import Classic_UNet_2D
 
 
 
@@ -72,7 +72,7 @@ def load_model(model_path, device = 'cpu'):
     n_channels_input = state_dict[list(state_dict.keys())[0]].size(1)
     n_channels_target = state_dict[list(state_dict.keys())[-1]].size(0)
     
-    model = Classic_U_Net_2D(n_channels_input, n_channels_target).to(device= device)
+    model = Classic_UNet_2D(n_channels_input, n_channels_target).to(device= device)
     
     return model
     
