@@ -1,0 +1,8 @@
+ipython==7.31.1
+ipywidgets==7.6.5
+matplotlib==3.5.2
+napari==0.4.14
+numpy==1.21.5
+tifffile==2021.7.2
+torch==2.0.0
+torchvision==0.15.0
