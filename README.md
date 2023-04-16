@@ -43,11 +43,11 @@ For now, users can download our implementation and install the necessary depende
     - Open terminal and move to the folder containing the unet_pytorch_2d code
     - Create the virtual enviroment by typing: ``` python -m venv env_unet_2d ```
     - Activate the virtual enviroment. 
-		1. Windows: ``` .\env_env_unet_2d\Scripts\activate ```
-		2. Unix: ``` source env_env_unet_2d/bin/activate ```
+		1. Windows: ``` .\env_unet_2d\Scripts\activate ```
+		2. Unix: ``` source env_unet_2d/bin/activate ```
     - **Note**: you always need to activate the virtual enviroment before runing the jupyter notebook
-3. Install the required libraries by running ```pip install -r requirements.txt``` in the terminal.
-    - This step is under construction. Need to include requirement.txt **(to do)**
+3. - Upgrade pip by typing: ```python -m pip install --upgrade pip```
+4. Install the required libraries by running ```pip install -r requirements.txt``` in the terminal.
 
 
 By following these steps, users can easily install and run the U-Net architecture implementation on their local machines, allowing them to train and predict segmentation masks without requiring any programming skills.
