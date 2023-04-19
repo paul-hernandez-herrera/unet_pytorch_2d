@@ -11,6 +11,8 @@ class CustomImageDataset(Dataset):
     preprocess the input image if required, and return them as a tuple of PyTorch tensors.    
     """
     def __init__(self, folder_input, folder_target, enable_preprocess = False):
+        valid_suffix = {".tif", ".tiff"}
+        
         #saving the variables
         self.folder_input = Path(folder_input)
         self.folder_target = Path(folder_target)
@@ -19,7 +21,9 @@ class CustomImageDataset(Dataset):
         self.data_augmentation_flag = False
         
         #reading all files in target folder:
-        self.file_names = [item.name for item in list(self.folder_input.glob('*.tiff')) + list(self.folder_input.glob('*.tif')) if item.is_file()] 
+        self.file_names = [p.name for p in Path(self.folder_input).iterdir() if p.suffix in valid_suffix] 
+
+        check_trainingset_file_matching(self.file_names, self.folder_target)
         
         
     def __len__(self):
@@ -60,6 +64,12 @@ class CustomImageDataset(Dataset):
         
         self.data_augmentation_flag = augmentation_flag
         self.data_augmentation_object = data_augmentation_object
+
+def check_trainingset_file_matching(file_names, folder_target):
+    #verify each image in input_folder has an associated image in the target folder
+    missing_files = [f for f in file_names if not Path(folder_target, f).is_file()]
+    if missing_files:
+        raise ValueError('Missing traces for images: ' + ', '.join(missing_files))        
         
         
         
