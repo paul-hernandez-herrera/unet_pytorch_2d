@@ -8,30 +8,43 @@ from IPython.display import display
 from .util import imread
 from pathlib import Path
 
-def show_images_from_Dataset(custom_dataset, n_images_to_display=3):
-    img, _  = custom_dataset[0]
-    n_channels = img.shape[0]
+########################################################################################################
+########################################################################################################
 
+def show_images_from_Dataset(custom_dataset, n_images_to_display=3):
     # Create figure with subplots for each image and its channels
+    n_channels = custom_dataset[0][0].shape[0]
     fig, axs = plt.subplots(n_images_to_display, n_channels+1, figsize=(10, 20), dpi=80)
+    
     for i in range(n_images_to_display):
-        img, target = custom_dataset.__getitem__(np.random.randint(0, len(custom_dataset)))
-        img = img.numpy()
-        target = target.numpy()
+        img, target = custom_dataset[np.random.randint(len(custom_dataset))]
+        
+        img, target = np.asarray(img), np.asarray(target)
+        img, target = convert_img_shape_to_C_W_H(img, target)
+        
         for j in range(n_channels):
-            axs[i,j].imshow(np.squeeze(img[j,:,:]), cmap='gray')
-            axs[i,j].set_title('Image ' + str(i) + "--- Ch" + str(j))
+            axs[i,j].imshow(img[j], cmap='gray')
+            axs[i,j].set_title(f'Image {i} - Ch{j}')
             axs[i,j].axis('off')
-            fig.colorbar(axs[i,j].imshow(np.squeeze(img[j,:,:]), cmap='gray'), ax=axs[i,j])
+            fig.colorbar(axs[i,j].imshow(img[j], cmap='gray'), ax=axs[i,j])
             
-        for ch in range(target.shape[0]):
-            target[ch,:,:] = (ch+1)*target[ch,:,:]            
-        axs[i,n_channels].imshow(target.max(axis=0), cmap='gray')
-        axs[i,n_channels].set_title('Ground truth (target)')
-        axs[i,n_channels].axis('off')
-        fig.colorbar(axs[i,n_channels].imshow(target.max(axis=0), cmap='gray'), ax=axs[i,n_channels])
+        target = np.multiply(target, np.arange(1, n_channels+1).reshape(-1, 1, 1))
+        axs[i, n_channels].imshow(np.max(target, axis=0), cmap='gray')
+        axs[i, n_channels].set_title('Ground truth (target)')
+        axs[i, n_channels].axis('off')
+        fig.colorbar(axs[i, n_channels].imshow(np.max(target, axis=0), cmap='gray'), ax=axs[i, n_channels])
+        
     plt.tight_layout()
-    plt.show()
+    plt.show()    
+    
+########################################################################################################
+########################################################################################################
+    
+def convert_img_shape_to_C_W_H(img, target):
+    if img.ndim == 4:
+        img = np.max(img, axis=1)
+        target = np.max(target, axis=1)
+    return img, target     
     
 ########################################################################################################
 ########################################################################################################
