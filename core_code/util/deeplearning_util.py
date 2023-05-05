@@ -73,6 +73,8 @@ def load_model(model_path, device = 'cpu'):
     n_channels_target = state_dict[list(state_dict.keys())[-1]].size(0)
     
     model = Classic_UNet_2D(n_channels_input, n_channels_target).to(device= device)
+
+    model.load_state_dict(state_dict)
     
     return model
     
