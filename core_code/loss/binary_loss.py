@@ -17,13 +17,14 @@ class DiceLoss2D(torch.nn.Module):
         target = target.view(-1)
         
         # calculating the metrics over vectors in general terms
-        intersection = (output_normalized_0_1 * target).sum() 
-        union = output_normalized_0_1.sum() + target.sum() 
+        A_int_B = (output_normalized_0_1 * target).sum() 
+        A = output_normalized_0_1.sum() 
+        B = target.sum()
         
-        if union==0:
+        if A+B==0:
             dice = 1
         else:
-            dice = 2*intersection/union 
+            dice = 2*A_int_B/(A+B)
         
         # goal minimize the metric. Dice best performance is at maximum value equal to one, then substracting one
         return 1-dice
