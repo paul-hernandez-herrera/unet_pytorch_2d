@@ -1,6 +1,6 @@
 import torch
 
-class DiceLoss2D(torch.nn.Module):
+class DiceLoss(torch.nn.Module):
     def __init__(self):
         super().__init__()
         
