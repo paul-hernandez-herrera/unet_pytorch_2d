@@ -5,8 +5,9 @@ import torch
 from .util.deeplearning_util import load_model
 from .parameters_interface import ipwidget_basic
 from .parameters_interface.parameters_widget import parameters_device
+from .util.preprocess import preprocess_image
 
-def predict_model(input_path, model= None, model_path = None, output_folder=None, device = 'cpu'):
+def predict_model(input_path, model= None, model_path = None, output_folder=None, device = 'cpu', enable_preprocess = False):
     file_paths = util.get_image_file_paths(input_path)
     
     # Set output folder path
@@ -19,9 +20,18 @@ def predict_model(input_path, model= None, model_path = None, output_folder=None
     # Disable gradient calculations during evaluation
     output_file_paths = []
     with torch.no_grad():  
-        for img_file_path in file_paths: 
+        for img_file_path in file_paths:
+            
+            # reading image
+            input_img = util.imread(img_file_path).astype(np.float32)            
+            input_img = input_img[None] if input_img.ndim ==  2 else input_img
+            
+            #preprocess image if required
+            if enable_preprocess:
+                input_img = preprocess_image(input_img, percentile_range = [1,99])              
+            
             # Load input image as tensor
-            img = torch.tensor(util.imread(img_file_path).astype(np.float32)).unsqueeze(0).to(device=device)
+            img = torch.tensor(input_img).unsqueeze(0).to(device=device)
             
             # Apply model to input image
             network_output = model(img) 
@@ -52,7 +62,11 @@ class PredictSegmentationInteractive:
         device = self.device_w.get_device()
     
         # Predict images and return list of output file paths
-        file_paths = predict_model(self.folder_path_w.value, model_path = model_path, output_folder = self.folder_output_w.value, device = device)
+        file_paths = predict_model(self.folder_path_w.value, 
+                                   model_path = model_path, 
+                                   output_folder = self.folder_output_w.value, 
+                                   device = device,
+                                   enable_preprocess = False)
         
         return file_paths
 
