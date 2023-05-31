@@ -1,8 +1,10 @@
 import torch
 
 class BinaryLoss(torch.nn.Module):
-    def __init__(self, option = 'dice'):
+    def __init__(self, option = 'dice', alpha=0, beta=0):
         self.option = 'dice'
+        self.alpha = alpha
+        self.beta = beta
         super().__init__()
         
     def forward(self, model_output, target):
@@ -11,50 +13,74 @@ class BinaryLoss(torch.nn.Module):
         # We assume that the model returns the is not normalized to probabilities [0,1].
         
         # Normalizing to [0,1]
-        output_normalized_0_1 = torch.sigmoid(model_output)
+        output = torch.sigmoid(model_output)
         
         # convert to 1-d vector
-        output_normalized_0_1 = output_normalized_0_1.view(-1)
+        output = output.view(-1)
         target = target.view(-1)
-        
-        # calculating the metrics over vectors in general terms
-        A_int_B = (output_normalized_0_1 * target).sum() 
-        A = output_normalized_0_1.sum() 
-        B = target.sum()
-        
-        if self.option == 'dice':
-            # conditional probability --- 1/( 0.5*(1/P(A|B)) + 0.5*(1/P(B|A)))
-            if A+B==0:
-                loss = 1
-            else:
-                loss = 2*A_int_B/(A+B)
-        elif self.option == 'jaccard':
-            # conditional probability --- P(A^B|AUB)
-            A_union_B = A + B + A_int_B 
-            if A_union_B==0:
-                loss = 1
-            else:
-                loss = A_int_B/A_union_B
-        elif self.option == 'Sorgenfrei': 
-            # conditional probability --- P(A|B)*P(B|A)
-            if A==0 or B==0:
-                loss = 1
-            else:
-                loss = (A_int_B/B)*(A_int_B/A)
+               
+        if self.option == 'recall':
+            # conditional probability --- P(ground_true|prediction)
+            loss = general_equation(output, target, 0, 1, 1)
         elif self.option == 'precision':
-            # conditional probability --- P(A|B)
-            if B==0:
-                loss = 1
-            else:
-                loss = (A_int_B/B)
-        elif self.option == 'recall':
-            # conditional probability --- P(A|B)
-            if A==0:
-                loss = 1
-            else:
-                loss = (A_int_B/A)
+            # conditional probability --- P(prediction|ground_true)
+            loss = general_equation(output, target, 1, 0, 1)            
+        elif self.option == 'kulczynski_I':
+            loss = general_equation(output, target, 1, 1, 0)            
+        elif self.option == 'dice':
+            loss = general_equation(output, target, 1/2, 1/2, 1)
+        elif self.option == 'sw_jaccard':
+            loss = general_equation(output, target, 1/3, 1/3, 1)
+        elif self.option == 'jaccard':
+            loss = general_equation(output, target, 1  , 1  , 1)            
+        elif self.option == 'sokal_and_sneath_I':
+            loss = general_equation(output, target, 2  , 2  , 1)
+        elif self.option == 'Van_der_Maarel':
+            loss = 2*general_equation(output, target, 1/2, 1/2, 1) -1            
+        elif self.option == 'tiversky':
+            loss = general_equation(output, target, self.alpha, self.beta, 1)
+        elif self.option == 'johnson':
+            loss = general_equation(output, target, 1, 0, 1) + general_equation(output, target, 0, 1, 1)
+        elif self.option == 'mcconaughey':
+            loss = general_equation(output, target, 1, 0, 1) + general_equation(output, target, 0, 1, 1) -1
+        elif self.option == 'kulczynski_II':
+            loss = (general_equation(output, target, 1, 0, 1) + general_equation(output, target, 0, 1, 1) ) / 2
+        elif self.option == 'sorgenfrei':
+            loss = general_equation(output, target, 1, 0, 1) * general_equation(output, target, 0, 1, 1)
+        elif self.option == 'driver_kroeber_ochiai':
+            loss = (general_equation(output, target, 1, 0, 1) * general_equation(output, target, 0, 1, 1)).sqrt()
+        elif self.option == 'Braun-Blanquet':
+            loss = torch.minimum(general_equation(output, target, 1, 0, 1), general_equation(output, target, 0, 1, 1))
+        elif self.option == 'Simpson':
+            loss = torch.maximum(general_equation(output, target, 1, 0, 1), general_equation(output, target, 0, 1, 1))
             
-        
         # goal minimize the metric. Dice best performance is at maximum value equal to one, then substracting one
-        return 1-loss   
+        return 1-loss  
+
+def intersection(A, B):
+    return A * B
+
+def union(A, B):
+    return A+B-intersection(A, B)
+    
+def conditional_probability(A, B):
+    cardinality_A_int_B = (A*B).sum()
+    cardinality_B = B.sum()
+    
+    if cardinality_B == 0:
+        return 0
+    else:
+        return cardinality_A_int_B/cardinality_B
+    
+def general_equation(A, B, alpha, beta, gamma):
+    Prob_A_B = conditional_probability(A, B)
+    Prob_B_A = conditional_probability(B, A)
+    if [alpha,beta,gamma]==[1,0,1]:
+        return Prob_A_B
+    elif [alpha,beta,gamma]==[0,1,1]:
+        return Prob_B_A
+    else:
+        
+        return 1/((alpha*((1/Prob_A_B)-1) ) + (beta*((1/Prob_B_A)-1) ) + gamma)
+    
        
