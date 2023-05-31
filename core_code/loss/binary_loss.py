@@ -1,10 +1,8 @@
 import torch
 
 class BinaryLoss(torch.nn.Module):
-    def __init__(self, option = 'dice', alpha=0, beta=0):
-        self.option = 'dice'
-        self.alpha = alpha
-        self.beta = beta
+    def __init__(self, option = 'dice'):
+        self.option = option
         super().__init__()
         
     def forward(self, model_output, target):
@@ -37,8 +35,6 @@ class BinaryLoss(torch.nn.Module):
             loss = general_equation(output, target, 2  , 2  , 1)
         elif self.option == 'Van_der_Maarel':
             loss = 2*general_equation(output, target, 1/2, 1/2, 1) -1            
-        elif self.option == 'tiversky':
-            loss = general_equation(output, target, self.alpha, self.beta, 1)
         elif self.option == 'johnson':
             loss = general_equation(output, target, 1, 0, 1) + general_equation(output, target, 0, 1, 1)
         elif self.option == 'mcconaughey':
@@ -49,9 +45,9 @@ class BinaryLoss(torch.nn.Module):
             loss = general_equation(output, target, 1, 0, 1) * general_equation(output, target, 0, 1, 1)
         elif self.option == 'driver_kroeber_ochiai':
             loss = (general_equation(output, target, 1, 0, 1) * general_equation(output, target, 0, 1, 1)).sqrt()
-        elif self.option == 'Braun-Blanquet':
+        elif self.option == 'braun_blanquet':
             loss = torch.minimum(general_equation(output, target, 1, 0, 1), general_equation(output, target, 0, 1, 1))
-        elif self.option == 'Simpson':
+        elif self.option == 'simpson':
             loss = torch.maximum(general_equation(output, target, 1, 0, 1), general_equation(output, target, 0, 1, 1))
             
         # goal minimize the metric. Dice best performance is at maximum value equal to one, then substracting one
@@ -66,21 +62,19 @@ def union(A, B):
 def conditional_probability(A, B):
     cardinality_A_int_B = (A*B).sum()
     cardinality_B = B.sum()
-    
     if cardinality_B == 0:
         return 0
     else:
         return cardinality_A_int_B/cardinality_B
     
 def general_equation(A, B, alpha, beta, gamma):
-    Prob_A_B = conditional_probability(A, B)
-    Prob_B_A = conditional_probability(B, A)
     if [alpha,beta,gamma]==[1,0,1]:
-        return Prob_A_B
+        return conditional_probability(A, B)
     elif [alpha,beta,gamma]==[0,1,1]:
-        return Prob_B_A
+        return conditional_probability(B, A)        
     else:
-        
+        Prob_A_B = conditional_probability(A, B)
+        Prob_B_A = conditional_probability(B, A)        
         return 1/((alpha*((1/Prob_A_B)-1) ) + (beta*((1/Prob_B_A)-1) ) + gamma)
     
        
