@@ -10,7 +10,7 @@ dist/
 .spyproject
 
 # dataset
-dataset/
+/dataset
 
 # jupyter notebook for testing
 jupyter_notebook/testing.ipynb
