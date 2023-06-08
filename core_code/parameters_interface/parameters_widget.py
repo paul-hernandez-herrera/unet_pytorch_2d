@@ -178,14 +178,15 @@ class parameters_loss_function():
         # options for loss functions depending on the problem to solve
         loss_functions = {
             'singleClass': [
+                ('Dice + BCE', 'dice_BCE'),
                 ('Binary cross entropy (BCE)', 'BCEWithLogitsLoss'),
-                ('Dice loss', 'dice_loss'),
-                ('Dice + BCE', 'dice_BCE')
+                ('Dice loss', 'dice_loss')
             ],
             'multiClass': [
+                ('Dice + Cross Entropy', 'dice_cross'),
                 ('Cross entropy loss', 'cross_entropy'),
-                ('Dice loss', 'dice_loss'),
-                ('Dice + Cross Entropy', 'dice_cross')
+                ('Dice loss', 'dice_loss')
+                
             ]
         }        
         
