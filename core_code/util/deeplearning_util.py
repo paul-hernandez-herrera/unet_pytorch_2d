@@ -68,13 +68,13 @@ def get_model_outputdir(model_output_folder):
             warnings.warn(f"We assume that the parent folder of function {Path(__file__).stem} is: core_code")
     return model_output_folder
 
-def load_model(model_path, device = 'cpu'):
+def load_model(model_path, device = 'cpu', model_type = 'unet_2d'):
     state_dict = torch.load(model_path, map_location= device)
 
     n_channels_input = state_dict[list(state_dict.keys())[0]].size(1)
     n_channels_target = state_dict[list(state_dict.keys())[-1]].size(0)
     
-    model = Classic_UNet_2D(n_channels_input, n_channels_target).to(device= device)
+    model = get_model(model_type, n_channels_input, n_channels_target).to(device= device)
 
     model.load_state_dict(state_dict)
     
