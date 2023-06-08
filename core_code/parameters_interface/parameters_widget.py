@@ -133,7 +133,7 @@ class parameters_optimizer():
         self.optimizer_w.observe(self.dropdown_handler_optimizer, names='value')
 
         #optional parameters for the Optimizer SGD
-        self.learning_rate_w = ipwidget_basic.set_Float_Bounded('Learning rate: ', 0.0001, 0, 1, 0.001)
+        self.learning_rate_w = ipwidget_basic.set_Float_Bounded('Learning rate: ', 0.001, 0, 1, 0.001)
         
         #optional parameters for the Optimizer Adam
         self.beta1_w = ipwidget_basic.set_Float_Bounded('Beta 1: ', 0.9, 0, 1, 0.01)
