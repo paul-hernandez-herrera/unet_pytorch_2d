@@ -1,7 +1,7 @@
 from torch.optim import SGD, Adam, NAdam, RMSprop
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CyclicLR, CosineAnnealingLR, StepLR
 from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
-from ..loss.binary_loss import DiceLoss
+from ..loss.binary_loss import BinaryLoss
 from ..UNet_2D.data_augmentation import augmentation_segmentation_task
 from typing import Dict
 
