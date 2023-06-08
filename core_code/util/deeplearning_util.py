@@ -1,4 +1,6 @@
 import torch, warnings
+import typing as t
+import torch.nn.functional as F
 from pathlib import Path
 from datetime import datetime
 from ..models.UNet2d_model import Classic_UNet_2D
@@ -77,6 +79,56 @@ def load_model(model_path, device = 'cpu'):
     model.load_state_dict(state_dict)
     
     return model
+
+# get automatic batch size --- implementation from
+# https://towardsdatascience.com/a-batch-too-large-finding-the-batch-size-that-fits-on-gpus-aef70902a9f1
+#☺made small modifications
+def get_batch_size(
+    device: torch.device,
+    input_shape: t.Tuple[int, int, int],
+    output_shape: t.Tuple[int],
+    dataset_size: int,
+    model_type: str = 'resnet50',
+    max_batch_size: int = None,
+    num_iterations: int = 5,
+) -> int:
+    
+    model = get_model(model_type, input_shape[0], output_shape[0])
+    model.to(device)
+    model.train(True)
+    optimizer = torch.optim.Adam(model.parameters())
+
+    batch_size = 1
+    while True:
+        if max_batch_size is not None and batch_size >= max_batch_size:
+            batch_size = max_batch_size
+            break
+        if batch_size >= dataset_size:
+            batch_size = batch_size // 2
+            break
+        try:
+            for _ in range(num_iterations):
+                # dummy inputs and targets
+                inputs = torch.rand(*(batch_size, *input_shape), device=device)
+                targets = torch.rand(*(batch_size, *output_shape), device=device)
+                outputs = model(inputs)
+                loss = F.mse_loss(targets, outputs)
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+            batch_size *= 2
+        except RuntimeError:
+            batch_size //= 2
+            break
+    del model, optimizer
+    torch.cuda.empty_cache()
+      
+    return batch_size
+
+def get_model(model_type, n_channels_input, n_channels_target):
+    if model_type == 'unet_2d':
+        model = Classic_UNet_2D(n_channels_input, n_channels_target)
+        return model
     
     
     
