@@ -2,7 +2,6 @@ import ipywidgets as widgets
 import torch
 from IPython.display import display
 from ..datasets.data_augmentation_segmentation import augmentation_segmentation_task
-from ..datasets.Dataset import CustomImageDataset
 from . import ipwidget_basic
 from . import options
 
@@ -57,41 +56,45 @@ class parameters_create_training_set():
 ################################################################################.
 
 
-class parameters_model_training():
-    def __init__(self, model, training_dataset, n_channels_target):
+class parameters_model_training_segmentation():
+    def __init__(self, n_classes):
         print('------------------------------')
-        print('\033[47m' '\033[1m' 'REQUIRED PARAMETERS' '\033[0m')
-        print('------------------------------')        
+        print('\033[42m' '\033[1m' '    REQUIRED PARAMETERS     ' '\033[0m')
+        print('------------------------------')           
         
+        self.device = parameters_device()
         self.model_saving = parameters_model_saving()        
         
         print('------------------------------')
-        print('\033[47m' '\033[1m' 'OPTIONAL PARAMETERS' '\033[0m')
-        print('------------------------------')    
+        print('\033[41m' '\033[1m' '     OPTIONAL PARAMETERS     ' '\033[0m')
+        print('------------------------------')     
         
-        self.batch_w = ipwidget_basic.set_Int('Batch size: ', 8)
         self.number_epochs_w = ipwidget_basic.set_Int('Number of epochs: ', 100)
         
         print('------------------------------')
-        self.validation = parameters_validation_set(training_dataset)
-        print('------------------------------')
+        self.criterion_loss = parameters_loss_function(n_classes)        
         
-        self.criterion_loss = parameters_loss_function(n_channels_target)
-    
         print('------------------------------')
-        self.optimizer = parameters_optimizer(model)
-        print('------------------------------')
+        self.optimizer = parameters_optimizer()
         
+        print('------------------------------')
         self.lr_scheduler = parameters_lr_scheduler()     
+        
+        print('------------------------------')
+        self.validation = parameters_validation_testing_set('Validation :', dropdown_default = 'percentage_training_set')
+        
+        print('------------------------------')
+        self.test = parameters_validation_testing_set('Test :', dropdown_default = 'None')  
     
     def get(self, str_id):
         parameters = {
-            'batch': self.batch_w.value,
             'epochs': self.number_epochs_w.value,
+            'device': self.device.get_device(),
             'loss_function': self.criterion_loss.get(),
-            'optimizer': self.optimizer.get(),
-            'train_dataset': self.validation.get()['train_dataset'],
-            'validation_dataset': self.validation.get()['validation_dataset'],
+            'optimizer_par': self.optimizer.get(),
+            'validation_par': self.validation.get(),
+            'test_par': self.test.get(),
+            'lr_scheduler_par': self.lr_scheduler.get(),
             'model_output_folder': self.model_saving.get('model_output_folder'),
             'model_checkpoint': self.model_saving.get('model_checkpoint'),
             'model_checkpoint_frequency': self.model_saving.get('model_checkpoint_frequency')
@@ -119,8 +122,7 @@ class parameters_device():
 ################################################################################
 
 class parameters_optimizer():
-    def __init__(self, model):
-        self.model = model
+    def __init__(self):
         
         optimizer_options = [('Adam', 'Adam'),
                              ('Nesterov_Adam', 'Nesterov_Adam'),
@@ -160,14 +162,13 @@ class parameters_optimizer():
         self.main_container.children = optimizer_params.get(change.new, [])
     
     def get(self):
-        optimizer = options.get_optimizer(self.optimizer_w.value, 
-                                          self.model, 
-                                          lr = self.learning_rate_w.value,
-                                          weight_decay = self.weigth_decay_w.value, 
-                                          momentum = self.momentum_w.value,
-                                          betas = (self.beta1_w.value, self.beta2_w.value)
-                                          )
-        return optimizer
+        optimizer_par = {'Optimizer': self.optimizer_w.value,
+                         'lr': self.learning_rate_w.value,
+                         'weight_decay': self.weigth_decay_w.value, 
+                         'momentum': self.momentum_w.value, 
+                         'betas': (self.beta1_w.value, self.beta2_w.value)
+                         }
+        return optimizer_par
 
 ################################################################################
 
@@ -193,58 +194,56 @@ class parameters_loss_function():
         self.loss_w = ipwidget_basic.set_dropdown('Loss function: ', loss_functions[loss_type])
         
         
-    def get(self):
-        loss_function = options.get_loss_function(self.loss_w.value)
-        
-        return loss_function
+    def get(self):        
+        return self.loss_w.value
 
 ################################################################################
 
-class parameters_validation_set():
-    def __init__(self, train_dataset):
+class parameters_validation_testing_set():
+    def __init__(self, dropdown_label, 
+                 dropdown_default = 'percentage_training_set'):
         
-        self.train_dataset = train_dataset
+        # options obtaining validation/test sets
+        options  = [('% of training set', 'percentage_training_set'),
+                    ('None', 'None'),
+                    ('Folder paths', 'folder_path')                    
+                    ]
+        # this line of code allows to change the default option to display        
+        index = next((i for i, option in enumerate(options) if option[1] == dropdown_default), None)
+        options.insert(0, options.pop(index))
         
-        # options for loss functions
-        validation_options = [('None', 'None'),
-                              ('Folder paths', 'folder_path'),
-                              ('% of training set', 'percentage_training_set')
-                              ]
+        self.new_dataset_w = ipwidget_basic.set_dropdown(dropdown_label, options)
         
-        self.validation_w = ipwidget_basic.set_dropdown('Validation: ', validation_options)
-        
+        self.perc_training_set = ipwidget_basic.set_Float_Bounded(' ', 0.05, 0, 1, 0.01)
         self.folder_input_w  = ipwidget_basic.set_text('Folder images: ', 'Insert path here', show = False)
         self.folder_target_w = ipwidget_basic.set_text('Folder target: ', 'Insert path here', show = False)        
-        self.perc_training_set = ipwidget_basic.set_Float_Bounded(' ', 0.05, 0, 1, 0.01)
+        
         
         self.main_container = widgets.VBox(children= [])
+        self.set_value_container(dropdown_default)  
         
-        self.validation_w.observe(self.dropdown_handler_validation, names='value')
+        self.new_dataset_w.observe(self.dropdown_handler_validation, names='value')
         display(self.main_container)
         
-        
     def dropdown_handler_validation(self, change):
-        if change.new == 'folder_path':
+        self.set_value_container(change.new)        
+        
+    def set_value_container(self, children_id):
+        if children_id == 'folder_path':
             self.main_container.children = [self.folder_input_w, self.folder_target_w]
-        elif change.new == 'percentage_training_set':
+        elif children_id == 'percentage_training_set':
             self.main_container.children = [self.perc_training_set]
-        elif change.new == 'None':
+        elif children_id == 'None':
             self.main_container.children = []
             
-    def split_training_validation(self):
-        val_type = self.validation_w.value
-        if val_type == 'None':
-            return self.train_dataset, CustomImageDataset('', '')
-        elif val_type == 'folder_path':
-            return self.train_dataset, CustomImageDataset(self.folder_input_w.value, self.folder_target_w)
-        elif val_type == 'percentage_training_set':
-            per_val = self.perc_training_set.value
-            generator_seed = torch.Generator().manual_seed(1)
-            return torch.utils.data.random_split(self.train_dataset, [1-per_val, per_val], generator=generator_seed)
-            
     def get(self):
-        new_train_dataset, validation_dataset = self.split_training_validation()
-        return {"train_dataset"    : new_train_dataset, "validation_dataset"  : validation_dataset}
+        parameters = {
+            'type': self.new_dataset_w.value,
+            'folder_input': self.folder_input_w.value,
+            'folder_target': self.folder_target_w.value,
+            'per_val': self.perc_training_set.value
+            }
+        return parameters
             
 
 
@@ -266,9 +265,7 @@ class parameters_data_augmentation():
         self.zoom_flag_w = ipwidget_basic.set_checkbox('Zoom', True, show = False)
         self.zoom_range_w = ipwidget_basic.set_FloatRangeSlider('Zoom', dummy.zoom_range[0], dummy.zoom_range[1], 0.1, 2, show = False)
         
-        
-        self.main_container = widgets.VBox(children= [self.data_augmentation_flag_w])
-        
+        self.main_container = widgets.VBox(children= [self.data_augmentation_flag_w])       
         
         self.shear_container = widgets.HBox(children= [self.shear_flag_w, self.shear_angle_w])
         self.zoom_container = widgets.HBox(children= [self.zoom_flag_w, self.zoom_range_w])
@@ -349,7 +346,6 @@ class parameters_lr_scheduler():
         # parameters step
         self.step_size_w = ipwidget_basic.set_Int('Step: ', 10, show = False)
         
-        
         self.main_container = widgets.HBox(children= [self.factor_w, self.patience_w])
         
         display(self.main_container)
@@ -365,22 +361,20 @@ class parameters_lr_scheduler():
         self.main_container.children = widget_mapping.get(change.new, [])
 
     
-    def get(self, optimizer):
-        
-        lr_scheduler = options.get_lr_scheduler(
-            option_name = self.lr_scheduler_w.value, 
-            optimizer = optimizer, 
-            factor = self.factor_w.value, 
-            patience = self.patience_w.value, 
-            base_lr = self.base_lr_w.value, 
-            max_lr = self.max_lr_w.value, 
-            step_size_up = self.T_max_w.value, 
-            T_max = self.T_max_w.value, 
-            step_size = self.step_size_w.value, 
-            gamma = self.factor_w.value, 
-            mode = 'min')     
-        
-        return lr_scheduler
+    def get(self):
+        parameters = {
+            'option_name': self.lr_scheduler_w.value, 
+            'factor': self.factor_w.value, 
+            'patience': self.patience_w.value, 
+            'base_lr': self.base_lr_w.value, 
+            'max_lr': self.max_lr_w.value, 
+            'step_size_up': self.T_max_w.value, 
+            'T_max': self.T_max_w.value, 
+            'step_size': self.step_size_w.value, 
+            'gamma': self.factor_w.value, 
+            'mode': 'min'
+            }
+        return parameters
 
 ################################################################################        
             

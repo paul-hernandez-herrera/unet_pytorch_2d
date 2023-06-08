@@ -1,9 +1,14 @@
 from torch.optim import SGD, Adam, NAdam, RMSprop
+from torch.utils.data import random_split
+from torch.utils.data.dataset import Subset
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CyclicLR, CosineAnnealingLR, StepLR
 from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
 from ..loss.binary_loss import BinaryLoss
 from ..datasets.data_augmentation_segmentation import augmentation_segmentation_task
+from ..datasets.Dataset import CustomImageDataset
 from typing import Dict
+import copy
+
 
 
 def get_optimizer(option_name: str, 
@@ -82,3 +87,30 @@ def get_data_augmentation(data_augmentation_flag = True, **kargs):
     return data_augmentation_object
 
 ###################################################################
+
+def get_split_training_val_test_sets(train_dataset, val_par, test_par):
+    train_dataset = copy.deepcopy(train_dataset)
+    train_dataset, val_set = split_dataset(train_dataset, val_par, test_par)
+    train_dataset, test_set = split_dataset(train_dataset, test_par, val_par)    
+    #validation and training set to be use without dataaugmentation
+    if (val_par["type"]=='percentage_training_set') and (test_par["type"]=='percentage_training_set'):
+        perc1 = val_par["per_val"]
+        perc2 = test_par["per_val"]
+        train_dataset, val_set, test_set = random_split(train_dataset, [1-perc1-perc2, perc1, perc2])
+        
+    train_dataset = copy.deepcopy(train_dataset)
+    if val_set: 
+        val_set.dataset.set_data_augmentation(augmentation_flag = False)
+    if isinstance(val_set, Subset):
+        val_set.dataset.set_data_augmentation(augmentation_flag = False)
+    return train_dataset, val_set, test_set
+
+def split_dataset(train_dataset, parameters_1, parameters_2):
+    if parameters_1["type"] == 'None':
+        return train_dataset, None
+    elif parameters_1["type"] == 'folder_path':
+        return train_dataset, CustomImageDataset(parameters_1["folder_input"], parameters_1["folder_target"])
+    elif parameters_1["type"]=='percentage_training_set' and parameters_2["type"]=='None':
+        perc1 = parameters_1["per_val"]
+        return random_split(train_dataset, [1-perc1, perc1])
+    return train_dataset, None
