@@ -1,8 +1,8 @@
 import ipywidgets as widgets
 import torch
 from IPython.display import display
-from ..UNet_2D.data_augmentation import augmentation_segmentation_task
-from ..UNet_2D.Dataset import CustomImageDataset
+from ..datasets.data_augmentation_segmentation import augmentation_segmentation_task
+from ..datasets.Dataset import CustomImageDataset
 from . import ipwidget_basic
 from . import options
 

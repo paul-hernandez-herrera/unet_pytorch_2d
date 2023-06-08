@@ -2,7 +2,7 @@ from torch.optim import SGD, Adam, NAdam, RMSprop
 from torch.optim.lr_scheduler import ReduceLROnPlateau, CyclicLR, CosineAnnealingLR, StepLR
 from torch.nn import CrossEntropyLoss, BCEWithLogitsLoss
 from ..loss.binary_loss import BinaryLoss
-from ..UNet_2D.data_augmentation import augmentation_segmentation_task
+from ..datasets.data_augmentation_segmentation import augmentation_segmentation_task
 from typing import Dict
 
 
@@ -58,13 +58,13 @@ def get_loss_function(option_name: str):
     if option_name == 'cross_entropy': 
         loss_function = [CrossEntropyLoss()]
     elif option_name == 'dice_loss': 
-        loss_function = [DiceLoss()]
+        loss_function = [BinaryLoss('dice')]
     elif option_name == 'dice_cross': 
-        loss_function = [DiceLoss(), CrossEntropyLoss()]
+        loss_function = [BinaryLoss('dice'), CrossEntropyLoss()]
     elif option_name == 'BCEWithLogitsLoss': 
         loss_function = [BCEWithLogitsLoss()]
     elif option_name == 'dice_BCE': 
-        loss_function = [DiceLoss(), BCEWithLogitsLoss()]    
+        loss_function = [BinaryLoss('dice'), BCEWithLogitsLoss()]    
     else:
         raise Exception("Sorry, " + option_name + " not recognized as loss function option.")
         

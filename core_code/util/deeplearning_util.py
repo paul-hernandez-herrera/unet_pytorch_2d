@@ -1,7 +1,7 @@
 import torch, warnings
 from pathlib import Path
 from datetime import datetime
-from ..UNet_2D.UNet2d_model import Classic_UNet_2D
+from ..models.UNet2d_model import Classic_UNet_2D
 
 
 
