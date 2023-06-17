@@ -281,18 +281,17 @@ class parameters_data_augmentation():
         else:
             self.main_container.children = [self.data_augmentation_flag_w]
             
-    def get(self):        
-        data_augmentation = options.get_data_augmentation(
-            enable_hflip = self.hflip_flag_w.value, 
-            enable_vflip = self.vflip_flag_w.value, 
-            enable_shear = self.shear_flag_w.value, 
-            enable_zoom = self.zoom_flag_w.value, 
-            shear_angle = self.shear_angle_w.value, 
-            zoom_range = self.zoom_range_w.value, 
-            data_augmentation_flag = self.data_augmentation_flag_w.value)
-            
-        return {"data_augmentation_flag"   : self.data_augmentation_flag_w.value,
-                "data_augmentation_object" : data_augmentation}
+    def get(self):
+        parameters = {
+            'enable_data_augmentation': self.data_augmentation_flag_w.value,
+            'enable_hflip': self.hflip_flag_w.value,
+            'enable_vflip': self.vflip_flag_w.value, 
+            'enable_shear': self.shear_flag_w.value, 
+            'enable_zoom': self.shear_flag_w.value, 
+            'shear_angle': self.shear_angle_w.value,  
+            'zoom_range': self.zoom_range_w.value
+            }
+        return parameters
     
 class parameters_model_saving():
     def __init__(self):
