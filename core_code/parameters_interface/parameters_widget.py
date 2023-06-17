@@ -3,7 +3,6 @@ import torch
 from IPython.display import display
 from ..datasets.data_augmentation_segmentation import augmentation_segmentation_task
 from . import ipwidget_basic
-from . import options
 
     
 ################################################################################
@@ -205,15 +204,15 @@ class parameters_validation_testing_set():
                  dropdown_default = 'percentage_training_set'):
         
         # options obtaining validation/test sets
-        options  = [('% of training set', 'percentage_training_set'),
-                    ('None', 'None'),
-                    ('Folder paths', 'folder_path')                    
-                    ]
+        options_dropdown  = [('% of training set', 'percentage_training_set'),
+                             ('None', 'None'),
+                             ('Folder paths', 'folder_path')
+                             ]
         # this line of code allows to change the default option to display        
-        index = next((i for i, option in enumerate(options) if option[1] == dropdown_default), None)
-        options.insert(0, options.pop(index))
+        index = next((i for i, option in enumerate(options_dropdown) if option[1] == dropdown_default), None)
+        options_dropdown.insert(0, options_dropdown.pop(index))
         
-        self.new_dataset_w = ipwidget_basic.set_dropdown(dropdown_label, options)
+        self.new_dataset_w = ipwidget_basic.set_dropdown(dropdown_label, options_dropdown)
         
         self.perc_training_set = ipwidget_basic.set_Float_Bounded(' ', 0.05, 0, 1, 0.01)
         self.folder_input_w  = ipwidget_basic.set_text('Folder images: ', 'Insert path here', show = False)
