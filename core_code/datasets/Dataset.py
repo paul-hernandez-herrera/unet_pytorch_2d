@@ -64,6 +64,8 @@ class CustomImageDataset(Dataset):
         
         self.data_augmentation_flag = augmentation_flag
         self.data_augmentation_object = data_augmentation_object
+        if not(augmentation_flag):
+            self.data_augmentation_object = None
 
 def check_trainingset_file_matching(file_names, folder_target):
     #verify each image in input_folder has an associated image in the target folder
