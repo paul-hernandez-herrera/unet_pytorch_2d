@@ -77,14 +77,10 @@ def get_loss_function(option_name: str):
 
 ###################################################################
 
-def get_data_augmentation(data_augmentation_flag = True, **kargs): 
-    
-    data_augmentation_object = augmentation_segmentation_task(**kargs)
-            
-    if not(data_augmentation_flag):
-        data_augmentation_object = None
-        
-    return data_augmentation_object
+def get_data_augmentation(enable_data_augmentation = True, **kargs): 
+    if enable_data_augmentation:
+        return augmentation_segmentation_task(**kargs)
+    return None
 
 ###################################################################
 
