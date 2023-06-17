@@ -32,5 +32,11 @@ def create_file_in_case_not_exist(folder_path):
     folder_path.mkdir(parents=True, exist_ok=True)
     return
 
+def write_list_to_file(file_name, data):
+    with open(file_name, 'w') as f:
+        for line in data:
+            f.write(f'{line}\n')
+    f.close()
+
 
     
