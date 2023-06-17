@@ -1,8 +1,9 @@
 import torch
 
 class BinaryLoss(torch.nn.Module):
-    def __init__(self, option = 'dice'):
+    def __init__(self, option = 'dice', segmentation = False):
         self.option = option
+        self.segmentation = segmentation
         super().__init__()
         
     def forward(self, model_output, target):
@@ -12,6 +13,9 @@ class BinaryLoss(torch.nn.Module):
         
         # Normalizing to [0,1]
         output = torch.sigmoid(model_output)
+        
+        if self.segmentation:
+            output = output>0.5
         
         # convert to 1-d vector
         output = output.view(-1)
@@ -63,7 +67,7 @@ def conditional_probability(A, B):
     cardinality_A_int_B = (A*B).sum()
     cardinality_B = B.sum()
     if cardinality_B == 0:
-        return 0
+        return 1e-7
     else:
         return cardinality_A_int_B/cardinality_B
     
