@@ -16,13 +16,11 @@ def train_one_epoch(model, train_loader, optimizer, loss_functions, device, loss
     model.train() #set the model in training mode
     epoch_loss = 0
     
-    for batch in train_loader: 
-        imgs, targets = batch #getting imgs and target output for current batch
+    for imgs, targets in train_loader: 
         
         #we have a tensor in the train_loader, move to device
         imgs = imgs.to(device= device, dtype = torch.float32)
         targets = targets.to(device= device, dtype = torch.float32)
-        #targets = targets.to(device=self.device, dtype=torch.long)
         
         optimizer.zero_grad()  # sets to zero the gradients of the optimizer
         
@@ -51,8 +49,7 @@ def calculate_validation_loss(model, validation_loader, loss_functions, device, 
     model.eval() #set the model in evaluation mode
     val_loss = 0
     with torch.no_grad():  # disable gradient calculations during evaluation
-        for batch in validation_loader: 
-            imgs, targets = batch #getting imgs and target output for current batch
+        for imgs, targets in validation_loader: 
             
             #we have a tensor in the validation_loader, move to device
             imgs = imgs.to(device= device, dtype = torch.float32)
@@ -79,13 +76,11 @@ def calculate_test_performance(model, test_loader, device, folder_output = None)
         folder_output = Path(folder_output,'test_results')
         folder_output.mkdir(parents=True, exist_ok=True)
     
-    metric_dice = np.array([])
+    metric_dice = []
     binary_loss = BinaryLoss(option = 'dice', segmentation = True)
     img_id = 0
     with torch.no_grad():  # disable gradient calculations during evaluation
-        for batch in test_loader: 
-            imgs, targets = batch #getting imgs and target output for current batch
-            
+        for imgs, targets in test_loader:             
             #we have a tensor in the validation_loader, move to device
             imgs = imgs.to(device= device, dtype = torch.float32)
             targets = targets.to(device= device, dtype = torch.float32)
@@ -96,9 +91,9 @@ def calculate_test_performance(model, test_loader, device, folder_output = None)
                 current_output = network_output[j,:,:,:][None]
                 current_target = targets[j,:,:,:][None]
                 
-                val = 1-binary_loss(current_output, current_target)
+                val = 1-binary_loss(current_output, current_target).cpu().numpy()
                 
-                metric_dice = np.hstack((metric_dice, val.cpu().numpy()))
+                metric_dice.append(val)
                 
                 # Calculate probability map and convert to numpy array
                 file_id = str(img_id).zfill(5)
@@ -106,21 +101,18 @@ def calculate_test_performance(model, test_loader, device, folder_output = None)
                 
                 probability = torch.sigmoid(current_output).squeeze().cpu().numpy()
                 util.imwrite(Path(folder_output, file_id + '_prob.tif'), (255 * probability).astype(np.uint8))
-                util.imwrite(Path(folder_output, file_id + '_img.tif'), (255*imgs[j,:,:,:]).cpu().numpy().astype(np.uint8))
-                util.imwrite(Path(folder_output, file_id + '_targets.tif'), (255 *targets[j,:,:,:]).cpu().numpy().astype(np.uint8))
+                util.imwrite(Path(folder_output, file_id + '_img.tif'), (255*imgs[j]).cpu().numpy().astype(np.uint8))
+                util.imwrite(Path(folder_output, file_id + '_targets.tif'), (255 *targets[j]).cpu().numpy().astype(np.uint8))
 
-    w_dataset = test_loader.dataset.dataset
+    w_dataset = test_loader.dataset.dataset    
+    index = np.array(test_loader.dataset.indices)        
     
-    index = np.array(test_loader.dataset.indices)
-        
-    test_set_len = len(test_loader)
     print("Printing test set ")
-    k = 0
-    for i in index:
+    for k, i in enumerate(index):
         print(f'test img_id: {k} --- file_name: {w_dataset.file_names[i]}')
-        k+=1
         
-    print(f"n_test = {test_set_len} ---- mean_error = {np.mean(metric_dice)} ---- std = {np.std(metric_dice)}" )
+    metric_dice = np.array(metric_dice)
+    print(f"n_test = {len(test_loader)} ---- mean_error = {np.mean(metric_dice)} ---- std = {np.std(metric_dice)}" )
     print(metric_dice)
 
 def get_model_outputdir(model_output_folder):
@@ -156,9 +148,8 @@ def get_batch_size(
     num_iterations: int = 5,
 ) -> int:
     
-    model = get_model(model_type, input_shape[0], output_shape[0])
-    model.to(device)
-    model.train(True)
+    model = get_model(model_type, input_shape[0], output_shape[0]).to(device)
+    model.train()
     optimizer = torch.optim.Adam(model.parameters())
 
     batch_size = 1
