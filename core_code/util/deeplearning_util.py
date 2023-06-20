@@ -6,6 +6,7 @@ from datetime import datetime
 from ..models.UNet2d_model import Classic_UNet_2D
 from ..loss.binary_loss import BinaryLoss
 from torch.utils.data.dataset import Subset
+from ..datasets.Dataset import CustomImageDataset
 from ..util import util
 import numpy as np
 
@@ -70,6 +71,7 @@ def calculate_validation_loss(model, validation_loader, loss_functions, device, 
     return val_loss
 
 def calculate_test_performance(model, test_loader, device, folder_output = None):
+    metric_loss_option = 'dice'
     model.eval() #set the model in evaluation mode
     
     if not(folder_output):
@@ -77,7 +79,7 @@ def calculate_test_performance(model, test_loader, device, folder_output = None)
         folder_output.mkdir(parents=True, exist_ok=True)
     
     metric_dice = []
-    binary_loss = BinaryLoss(option = 'dice', segmentation = True)
+    binary_loss = BinaryLoss(option = metric_loss_option, segmentation = True)
     img_id = 0
     with torch.no_grad():  # disable gradient calculations during evaluation
         for imgs, targets in test_loader:             
@@ -88,8 +90,8 @@ def calculate_test_performance(model, test_loader, device, folder_output = None)
             network_output = model(imgs) #applying the model to the input images
             
             for j in range(0, targets.shape[0]):
-                current_output = network_output[j,:,:,:][None]
-                current_target = targets[j,:,:,:][None]
+                current_output = network_output[j][None]
+                current_target = targets[j][None]
                 
                 val = 1-binary_loss(current_output, current_target).cpu().numpy()
                 
@@ -103,16 +105,13 @@ def calculate_test_performance(model, test_loader, device, folder_output = None)
                 util.imwrite(Path(folder_output, file_id + '_prob.tif'), (255 * probability).astype(np.uint8))
                 util.imwrite(Path(folder_output, file_id + '_img.tif'), (255*imgs[j]).cpu().numpy().astype(np.uint8))
                 util.imwrite(Path(folder_output, file_id + '_targets.tif'), (255 *targets[j]).cpu().numpy().astype(np.uint8))
-
-    w_dataset = test_loader.dataset.dataset    
-    index = np.array(test_loader.dataset.indices)        
-    
-    print("Printing test set ")
-    for k, i in enumerate(index):
-        print(f'test img_id: {k} --- file_name: {w_dataset.file_names[i]}')
-        
+                
+    print('------------------------------')
+    print(f"\033[47m \033[1m TEST SET - Performance ({metric_loss_option}) \033[0m")
+    print('------------------------------')                
     metric_dice = np.array(metric_dice)
     print(f"n_test = {len(test_loader)} ---- mean_error = {np.mean(metric_dice)} ---- std = {np.std(metric_dice)}" )
+    print("Metric performance for each individual image" )
     print(metric_dice)
 
 def get_model_outputdir(model_output_folder):
@@ -185,11 +184,15 @@ def get_model(model_type, n_channels_input, n_channels_target):
         return model
     
 def get_dataloader_file_names(dataset_loader, fullpath = True):
-    #index and file_names from test images
-    index = np.array(dataset_loader.dataset.indices)
-    file_names = [dataset_loader.dataset.dataset.file_names[i] if fullpath else dataset_loader.dataset.dataset.file_names[i].stem for i in index]
+    if isinstance(dataset_loader.dataset, CustomImageDataset):
+        dataset = dataset_loader.dataset
+        index = np.arange(len(dataset))
+    elif isinstance(dataset_loader.dataset, Subset):
+        dataset = dataset_loader.dataset.dataset
+        index = np.array(dataset_loader.dataset.indices)
+    
+    file_names = [dataset.file_names[i] if fullpath else dataset.file_names[i].stem for i in index]
     
     return file_names
-    
     
     
