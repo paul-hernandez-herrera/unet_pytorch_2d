@@ -92,7 +92,8 @@ def show_images_side_by_side_interactive(left_image_paths, right_image_paths, fl
             index = int(change.new) if change else 0
             with output1:
                 output1.clear_output(wait=True)
-                plt_imshow(image1[index])
+                #plt_imshow(image1[index])
+                plt_imshow(image1)
 
     
         def update_right_image(change):
@@ -100,7 +101,7 @@ def show_images_side_by_side_interactive(left_image_paths, right_image_paths, fl
             index = int(change.new) if change else 0
             with output2:
                 output2.clear_output(wait=True)
-                plt_imshow(image2[index])
+                plt_imshow(image2)
                 
         def right_checkbox_handler(change):
             if change.new == True:
