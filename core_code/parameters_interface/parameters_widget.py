@@ -132,7 +132,7 @@ class parameters_optimizer():
         self.optimizer_w.observe(self.dropdown_handler_optimizer, names='value')
 
         #optional parameters for the Optimizer SGD
-        self.learning_rate_w = ipwidget_basic.set_Float_Bounded('Learning rate: ', 0.001, 0, 1, 0.001)
+        self.learning_rate_w = ipwidget_basic.set_Float_Bounded('Learning rate: ', 0.01, 0, 1, 0.001)
         
         #optional parameters for the Optimizer Adam
         self.beta1_w = ipwidget_basic.set_Float_Bounded('Beta 1: ', 0.9, 0, 1, 0.01)
@@ -332,8 +332,8 @@ class parameters_lr_scheduler():
         
 
         # parameters plateau
-        self.factor_w = ipwidget_basic.set_Float_Bounded('Factor: ', 0.1, 0, 1, 0.01)
-        self.patience_w = ipwidget_basic.set_Int('Patience: ', 10, show = False)
+        self.factor_w = ipwidget_basic.set_Float_Bounded('Factor: ', 1/2, 0, 1, 0.01)
+        self.patience_w = ipwidget_basic.set_Int('Patience: ', 5, show = False)
         
         # parameters Cyclic LR
         self.base_lr_w = ipwidget_basic.set_Float_Bounded('Base lr: ', 0.0001, 0, 1, 0.0001)
