@@ -9,6 +9,7 @@ from torch.utils.data.dataset import Subset
 from ..datasets.Dataset import CustomImageDataset
 from ..util import util
 import numpy as np
+from collections import OrderedDict
 
 
 def train_one_epoch(model, train_loader, optimizer, loss_functions, device, loss_reduction = 'sum'):
@@ -130,7 +131,16 @@ def load_model(model_path, device = 'cpu', model_type = 'unet_2d'):
     
     model = get_model(model_type, n_channels_input, n_channels_target).to(device= device)
 
-    model.load_state_dict(state_dict)
+    try:
+        model.load_state_dict(state_dict)
+    except:
+        new_state_dict = OrderedDict()
+        for k, v in state_dict.items():
+            
+            name = k[10:] # remove `module.`
+            new_state_dict[name] = v
+        # load params
+        model.load_state_dict(new_state_dict)
     
     return model
 
