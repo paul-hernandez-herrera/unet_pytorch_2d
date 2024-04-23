@@ -64,3 +64,11 @@ To run the code successfully and perform the desired task, follow these steps:
     2. predict_segmentation_using_trained_deepLearning_model.ipynb: Use this notebook to predict segmentation from a trained model.
 
 Finally, for a more detailed explanation of how to use Jupyter Notebook, refer to the wiki page. (**To do**).
+
+### How to Train a U-NEt model for Segmentation in Google Colab?
+
+**Requires a gmail account**:   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/paul-hernandez-herrera/unet_pytorch_2d/blob/main/jupyter_notebook/Train_DeepLearning_Model.ipynb)
+
+### How to Perform Segmentation Given a Trained U-Net Model in Google Colab?
+
+**Requires a gmail account**:   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/paul-hernandez-herrera/unet_pytorch_2d/blob/main/jupyter_notebook/predict_segmentation_using_trained_deepLearning_model.ipynb)
