@@ -49,7 +49,7 @@ def convert_img_shape_to_C_W_H(img, target):
 ########################################################################################################
 ########################################################################################################
 
-def show_images_side_by_side_interactive(left_image_paths, right_image_paths):
+def show_images_side_by_side_interactive(left_image_paths, right_image_paths, flag_napari = True):
     global main_container
     main_container = widgets.HBox()
     
@@ -65,7 +65,11 @@ def show_images_side_by_side_interactive(left_image_paths, right_image_paths):
         left_image, right_image  = imread(left_image_paths[index]), imread(right_image_paths[index])
         
         try:
-            show_image_napari(left_image, right_image)
+            if flag_napari:
+                show_image_napari(left_image, right_image)
+            else:
+                main_container.close() 
+                show_image_ipywidget(left_image, right_image)                
         except:
             main_container.close()
             show_image_ipywidget(left_image, right_image) 
