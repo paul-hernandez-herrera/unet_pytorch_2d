@@ -33,6 +33,11 @@ class CustomImageDataset(Dataset):
         #reading input and target images
         input_img = util.imread(Path(self.folder_input, self.file_names[idx]))
         target_img = util.imread(Path(self.folder_target, self.file_names[idx]))
+
+        #just in case that the maximum value is different than zero
+        max_target = np.max(target_img)
+        if max_target > 0 :
+            target_img = target_img/max_target
         
         #preprocess image if required
         if self.enable_preprocess:
