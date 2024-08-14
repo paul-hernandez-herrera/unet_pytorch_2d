@@ -66,6 +66,9 @@ class parameters_model_training_segmentation():
         
         print('------------------------------')
         print('\033[41m' '\033[1m' '     OPTIONAL PARAMETERS     ' '\033[0m')
+        print('------------------------------')
+
+        self.pretrain = parameters_pretrain()     
         print('------------------------------')     
         
         self.number_epochs_w = ipwidget_basic.set_Int('Number of epochs: ', 100)
@@ -96,7 +99,8 @@ class parameters_model_training_segmentation():
             'lr_scheduler_par': self.lr_scheduler.get(),
             'model_output_folder': self.model_saving.get('model_output_folder'),
             'model_checkpoint': self.model_saving.get('model_checkpoint'),
-            'model_checkpoint_frequency': self.model_saving.get('model_checkpoint_frequency')
+            'model_checkpoint_frequency': self.model_saving.get('model_checkpoint_frequency'),
+            'pretrain_model_path': self.pretrain.get()
         }
         return parameters[str_id]
 
@@ -117,6 +121,15 @@ class parameters_device():
     
     def get_device(self):
         return self.device_w.value
+
+class parameters_pretrain():
+    def __init__(self):
+        self.pretrain_path = ipwidget_basic.set_text('Model pretrained path: ', 'Insert path here', show = False)
+        self.pretrain_container = widgets.VBox(children= [self.pretrain_path])
+        display(self.pretrain_container)
+            
+    def get(self):
+        return self.pretrain_path.value  
     
 ################################################################################
 
