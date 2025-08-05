@@ -58,12 +58,14 @@ def show_images_side_by_side_interactive(left_image_paths, right_image_paths, fl
     dropdown_w = set_dropdown('Image to show: ', dropdown_options)
 
     def dropdown_handler(change):
+        print("INDEX")
         index = int(change.new)
         show_image(index)      
     
     def show_image(index):        
         left_image, right_image  = imread(left_image_paths[index]), imread(right_image_paths[index])
-        
+        print(index)
+        print("index")
         try:
             if flag_napari:
                 show_image_napari(left_image, right_image)
@@ -149,6 +151,27 @@ def show_images_side_by_side_interactive(left_image_paths, right_image_paths, fl
     dropdown_w.observe(dropdown_handler, names='value')    
     show_image(0)    
     
+def display_all_images_in_separate_figures(input_paths, output_paths):
+    assert len(input_paths) == len(output_paths), "Número desigual de imágenes."
 
-            
+    for i, (input_path, output_path) in enumerate(zip(input_paths, output_paths)):
+        input_img = imread(input_path)
+        output_img = imread(output_path)
 
+        plt.figure(figsize=(8, 4))
+        plt.suptitle(f"Par {i}", fontsize=16)
+
+        # Imagen de entrada
+        plt.subplot(1, 2, 1)
+        plt.imshow(input_img, cmap='gray')
+        plt.title("Input")
+        plt.axis('off')
+
+        # Imagen de salida
+        plt.subplot(1, 2, 2)
+        plt.imshow(output_img, cmap='gray')
+        plt.title("Output")
+        plt.axis('off')
+
+        plt.tight_layout()
+        plt.show()
